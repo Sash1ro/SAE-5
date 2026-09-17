@@ -1,3 +1,3 @@
-# IA Manga detection APP using react native 
+# Manganitor
 
-## Android, IOS and Web
+## Android, iOS and Web using React Native and Expo
