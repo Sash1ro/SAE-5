@@ -1,35 +1,28 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { useAuthStore } from '../stores/useAuthStore';
 
-import Ionicons from '@expo/vector-icons/Ionicons';
+export default function RootLayout() {
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  
+  const segments = useSegments();
+  const router = useRouter();
 
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(auth)';
 
-export default function TabLayout() {
+    if (!isLoggedIn && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } 
+    else if (isLoggedIn && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isLoggedIn, segments]);
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#3d5affff',
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          headerTitle: 'Manganitor',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home-sharp' : 'home-outline'} color={color} size={24} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="about"
-        options={{
-          title: 'About',
-          headerTitle: 'Manganitor',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'information-circle' : 'information-circle-outline'} color={color} size={24}/>
-          ),
-        }}
-      />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(auth)" />
+    </Stack>
   );
 }
