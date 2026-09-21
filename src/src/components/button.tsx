@@ -1,4 +1,5 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
+import { colors } from "@/stores/stylesStore"
 
 type Props = {
   label: string;
@@ -17,14 +18,14 @@ export default function Button({ label, fun }: Props) {
 
 const styles = StyleSheet.create({
   buttonContainer: {
-    width:  220,
-    height: 68,
+    width:  190,
+    height: 48,
     borderRadius: 60,
     marginHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 3,
-    backgroundColor: "#3d5affff"
+    backgroundColor: colors.main
   },
   button: {
     borderRadius: 60,

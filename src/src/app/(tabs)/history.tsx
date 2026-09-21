@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text, View, StyleSheet } from 'react-native';
 
-export default function AboutScreen() {
+export default function HistoryPage() {
   const { id } = useLocalSearchParams()
   return (
     <View style={styles.container}>
