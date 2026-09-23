@@ -3,50 +3,103 @@ import { colors } from '@/stores/stylesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View, StyleSheet, TextInput, Alert } from 'react-native';
+import { Text, View, StyleSheet, TextInput } from 'react-native';
 
 export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
+
+  const [email, setEmail] = useState('');
+  const [pwd, setPwd] = useState('');
+  const [confPwd, setConfPwd] = useState('');
+  const [error, setError] = useState('');
 
   const { signup } = useLocalSearchParams();
   const accountCreation = signup === "1";
   const router = useRouter();
 
+  const handleLogin = () => {
+    setError('');
+
+    if (email.trim() === "") {
+      return setError("Please enter your email.");
+    }
+    if (pwd === "") {
+      return setError("Please enter a password.");
+    }
+
+    if (accountCreation) {
+      if (confPwd === "") {
+        return setError("Please confirm your password.");
+      }
+      if (pwd !== confPwd) {
+        return setError("Passwords do not match.");
+      }
+    }
+
+    login();
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome {!accountCreation ? "Back " : ""}to Manganitor</Text>
+
+      <Text style={styles.title}>
+        Welcome {!accountCreation ? "Back " : ""}to Manganitor
+      </Text>
 
       <View style={styles.formContainer}>
+        {error !== "" ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : null}
+
         <TextInput
           style={styles.input}
           placeholder='mail@domain.com'
           placeholderTextColor={colors.placeHolder}
           keyboardType="email-address"
           autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
 
         <TextInput
           style={styles.input}
           placeholder='strong password'
           placeholderTextColor={colors.placeHolder}
+          textContentType='password'
+          autoCapitalize="none"
           secureTextEntry
+          value={pwd}
+          onChangeText={setPwd}
         />
 
         {accountCreation && (
           <TextInput
             style={styles.input}
             placeholder='repeat password'
+            textContentType='password'
+            autoCapitalize="none"
             placeholderTextColor={colors.placeHolder}
             secureTextEntry
+            value={confPwd}
+            onChangeText={setConfPwd}
           />
         )}
 
-
         <View style={styles.buttons}>
-          {!accountCreation && (<Button label='Login' fun={login}></Button>)}
-          {accountCreation && (<Button label='Create' fun={login}></Button>)}
-          {!accountCreation && (<Button label='Sign up' fun={() => router.push({ pathname: "/(auth)/login", params: { signup: 1 } })}></Button>)}
-          {accountCreation && (<Button label='Login' fun={() => router.push({ pathname: "/(auth)/login"})}></Button>)}
+          <Button 
+            label={accountCreation ? 'Create' : 'Login'} 
+            fun={handleLogin} 
+          />
+          <Button 
+            label={accountCreation ? 'Login' : 'Sign up'} 
+            fun={() => {
+              setError(''); 
+              router.push({ 
+                pathname: "/(auth)/login", 
+                params: accountCreation ? {} : { signup: 1 } 
+              });
+            }} 
+          />
         </View>
       </View>
     </View>
@@ -89,6 +142,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
-    flexDirection: 'row'
+    flexDirection: 'row',
+    marginTop: 10, 
   },
+  errorText: {
+    color: colors.error,
+    width: '100%',
+    textAlign: 'left',
+    marginBottom: -10,
+    fontWeight: '500',
+  }
 });
