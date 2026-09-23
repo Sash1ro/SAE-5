@@ -1,10 +1,11 @@
+import StyledText from '@/components/styledText';
 import { colors } from '@/stores/stylesStore';
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 export default function AboutScreen() {
   return (
     <View style={styles.container}>
-      <Text>About screen</Text>
+      <StyledText content="About screen"></StyledText>
     </View>
   );
 }
