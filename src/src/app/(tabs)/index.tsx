@@ -7,7 +7,7 @@ import Button from '@/components/button';
 import { pickImage } from '@/utils/pickImage';
 import { takePhoto } from '@/utils/takePhoto';
 import { useLoadingStore } from '@/stores/useLoadingStore';
-import { colors } from '@/stores/stylesStore';
+import { colors, container } from '@/stores/stylesStore';
 
 let PlaceholderImage = "https://placehold.net/4.png";
 
@@ -61,13 +61,7 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg2
-  },
+  ...container,
   bContainer: {
     gap: 10,
     flexDirection: "row",
