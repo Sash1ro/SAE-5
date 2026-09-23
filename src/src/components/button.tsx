@@ -1,5 +1,6 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { colors } from "@/stores/stylesStore"
+import { useLoadingStore } from '@/stores/useLoadingStore';
 
 type Props = {
   label: string;
@@ -7,9 +8,10 @@ type Props = {
 };
 
 export default function Button({ label, fun }: Props) {
+  const loading = useLoadingStore((state) => state.isLoading);
   return (
     <View style={styles.buttonContainer}>
-      <Pressable style={styles.button} onPress={() => fun ? fun() : alert("Pressed")}>
+      <Pressable disabled={loading} style={styles.button} onPress={() => fun ? fun() : alert("Pressed")}>
         <Text style={styles.buttonLabel}>{label}</Text>
       </Pressable>
     </View>
@@ -36,7 +38,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   buttonLabel: {
-    color: '#fff',
+    color: colors.onMain,
     fontSize: 16,
   },
 });

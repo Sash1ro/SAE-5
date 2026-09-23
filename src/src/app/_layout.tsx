@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '../stores/useAuthStore';
+import GlobalLoader from '@/components/globalLoader';
 
 export default function RootLayout() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -20,9 +21,12 @@ export default function RootLayout() {
   }, [isLoggedIn, segments]);
 
   return (
+    <>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
     </Stack>
+    <GlobalLoader />
+    </>
   );
 }

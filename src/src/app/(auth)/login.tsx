@@ -2,17 +2,19 @@ import Button from '@/components/button';
 import { colors } from '@/stores/stylesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Text, View, StyleSheet, TextInput, Alert } from 'react-native';
 
 export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
+
   const { signup } = useLocalSearchParams();
   const accountCreation = signup === "1";
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome {!accountCreation ? "Back" : ""} to Manganitor</Text>
+      <Text style={styles.title}>Welcome {!accountCreation ? "Back " : ""}to Manganitor</Text>
 
       <View style={styles.formContainer}>
         <TextInput
@@ -30,9 +32,21 @@ export default function LoginScreen() {
           secureTextEntry
         />
 
+        {accountCreation && (
+          <TextInput
+            style={styles.input}
+            placeholder='repeat password'
+            placeholderTextColor={colors.placeHolder}
+            secureTextEntry
+          />
+        )}
+
+
         <View style={styles.buttons}>
-          <Button label='Login' fun={login}></Button>
-          <Button label='Sign up' fun={() => router.push({ pathname: "/(auth)/login", params: { signup: 1 } })}></Button>
+          {!accountCreation && (<Button label='Login' fun={login}></Button>)}
+          {accountCreation && (<Button label='Create' fun={login}></Button>)}
+          {!accountCreation && (<Button label='Sign up' fun={() => router.push({ pathname: "/(auth)/login", params: { signup: 1 } })}></Button>)}
+          {accountCreation && (<Button label='Login' fun={() => router.push({ pathname: "/(auth)/login"})}></Button>)}
         </View>
       </View>
     </View>
@@ -61,7 +75,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   input: {
-    width: '100%', 
+    width: '100%',
     backgroundColor: colors.border,
     borderWidth: 1,
     borderColor: colors.border,
@@ -72,7 +86,7 @@ const styles = StyleSheet.create({
   },
   buttons: {
     width: '100%',
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
     flexDirection: 'row'
