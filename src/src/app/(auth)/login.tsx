@@ -28,11 +28,20 @@ export default function LoginScreen() {
     }
 
     if (accountCreation) {
+      const validEmail: RegExp = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+      if(!validEmail.test(email)) {
+        return setError("Please enter a valid email.")
+      }
+
       if (confPwd === "") {
         return setError("Please confirm your password.");
       }
       if (pwd !== confPwd) {
         return setError("Passwords do not match.");
+      }
+      if(pwd.length < 8) {
+        return setError("Password must be at least 8 characters.")
       }
     }
 
@@ -89,16 +98,16 @@ export default function LoginScreen() {
           <Button 
             label={accountCreation ? 'Create' : 'Login'} 
             fun={handleLogin} 
+            icon={accountCreation ? 'person-add' : 'person'}
           />
           <Button 
-            label={accountCreation ? 'Login' : 'Sign up'} 
+            alt={true}
+            label={accountCreation ? 'Back' : 'Sign up'} 
             fun={() => {
               setError(''); 
-              router.push({ 
-                pathname: "/(auth)/login", 
-                params: accountCreation ? {} : { signup: 1 } 
-              });
+              router.setParams({ signup: accountCreation ? "" : "1" });
             }} 
+            icon={accountCreation ? 'arrow-back' : 'person-add'}
           />
         </View>
       </View>

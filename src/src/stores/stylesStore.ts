@@ -4,7 +4,8 @@ const currentTheme = Appearance.getColorScheme();
 const isDark = currentTheme === "dark"
 
 const light = {
-  main: "#3d5aff",        
+  main: "#3d5aff", 
+  second: "#695cfa",         
   background: "#ffffff", 
   bg2: "#f3f4f6",         
   border: "#e5e7eb",     
@@ -17,6 +18,7 @@ const light = {
 
 const dark = {
   main: "#5c7cfa",        
+  second: "#695cfa",        
   background: "#0f172a",  
   bg2: "#1e293b",        
   border: "#334155",      
