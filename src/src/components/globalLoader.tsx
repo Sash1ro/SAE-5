@@ -1,6 +1,6 @@
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useLoadingStore } from '@/stores/useLoadingStore';
-import { colors } from '@/stores/stylesStore'; // using your existing colors
+import { colors } from '@/stores/stylesStore'; 
 
 export default function GlobalLoader() {
   const { isLoading, message } = useLoadingStore();

@@ -4,19 +4,19 @@ import { ImagePickerAsset } from "expo-image-picker";
 import { useRouter } from "expo-router";
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
-import CustomSlider from "@/components/slider";
+import ButtonGroup from "@/components/buttonGroup";
+import ScreenScrollView from "@/components/screenscrollView";
 
 import { pickImage } from "@/utils/pickImage";
 import { takePhoto } from "@/utils/takePhoto";
 import { useLoadingStore } from "@/stores/useLoadingStore";
 import { useDetectionStore } from "@/stores/useDetectionStore";
-import { classifyManga } from "@/services/mangaClassifier";
-import { colors, container } from "@/stores/stylesStore";
+import { classifyManga } from "@/services/mangaClassifier/classify";
+import { colors } from "@/stores/stylesStore";
 
 export default function Index() {
   const router = useRouter();
   const [imageAsset, setImageAsset] = useState<ImagePickerAsset | null>(null);
-  const [sliderValue, setSliderValue] = useState(0.2);
   const imageLoaded =
     imageAsset && typeof imageAsset === "object" && "uri" in imageAsset;
   const isMobile = Platform.OS === "ios" || Platform.OS === "android";
@@ -60,47 +60,41 @@ export default function Index() {
   const handleRunDetection = async () => {
     if (!imageAsset?.uri) return;
 
-    showLoading("Identification IA en cours...");
+    showLoading("IA Identification...");
     try {
-      const result = await classifyManga(imageAsset.uri, sliderValue, 0.4);
+      const result = await classifyManga(imageAsset.uri, 0.2, 0.4);
       if (result) {
         setCurrentDetection(result);
         addToHistory(result);
         router.push({
           pathname: "/details",
-          params: { id: `${result.universe} Tome ${result.tome}` },
+          params: { title: `${result.universe}-Tome-${result.tome}` },
         });
       } else {
         Alert.alert(
-          "Introuvable",
-          "Aucun manga reconnu avec une confiance suffisante.",
+          "Not found",
+          "No manga found with enough confidence",
         );
       }
     } catch (error: any) {
       console.error(error);
-      Alert.alert("Erreur IA", error.message || "Erreur lors de l'analyse.");
+      Alert.alert("Error", error.message || "Error while analysing");
     } finally {
       hideLoading();
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenScrollView
+      backgroundColor={colors.bg2}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <View style={styles.flexSpacer} />
       <ImageViewer imgSource={imageAsset?.uri ?? null} />
-      {imageLoaded && (
-        <View style={styles.sliderContainer}>
-          <CustomSlider
-            label="Confidence level"
-            value={sliderValue}
-            step={0.05}
-            onValueChange={setSliderValue}
-          />
-        </View>
-      )}
-      <View style={styles.bContainer}>
+      <ButtonGroup>
         {!imageLoaded && (
           <Button
-            label="Select Images"
+            label="Select Image"
             fun={handlePickImage}
             icon={"images"}
           ></Button>
@@ -127,20 +121,22 @@ export default function Index() {
             icon={"search"}
           ></Button>
         )}
-      </View>
-    </View>
+      </ButtonGroup>
+      <View style={styles.flexSpacer} />
+    </ScreenScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  ...container,
-  bContainer: {
-    gap: 10,
-    flexDirection: "row",
+  scrollContent: {
+    flexGrow: 1,
+    flexBasis: "auto",
+    alignItems: "center", 
+    paddingVertical: 24,  
+    gap: 20,              
   },
-  sliderContainer: {
-    width: "80%",
-    maxWidth: 320,
-    marginVertical: 0,
+  flexSpacer: {
+    flex: 1, 
+    minHeight: 16, 
   },
 });

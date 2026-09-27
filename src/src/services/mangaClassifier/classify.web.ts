@@ -2,7 +2,14 @@ import type * as OrtType from "onnxruntime-web";
 import { Asset } from "expo-asset";
 import { DetectionResult } from "@/stores/useDetectionStore";
 
-import indexData from "../../assets/models/index_mangas.json";
+import indexData from "../../../assets/models/index_mangas.json";
+import {
+  resizeAndNormalize,
+  parseLabel,
+  decodeYoloBestBox,
+  l2Normalize,
+  findBestMatch,
+} from "./classifyCore";
 
 let ort: typeof OrtType | null = null;
 let yoloSession: OrtType.InferenceSession | null = null;
@@ -65,7 +72,7 @@ export async function initModels(): Promise<void> {
 
   if (!yoloSession) {
     const yoloUri = await loadModelWeb(
-      require("../../assets/models/yolo.onnx"),
+      require("../../../assets/models/yolo.onnx"),
     );
     yoloSession = await ortInstance.InferenceSession.create(yoloUri, {
       executionProviders: ["wasm"],
@@ -73,7 +80,7 @@ export async function initModels(): Promise<void> {
   }
   if (!dinov2Session) {
     const dinoUri = await loadModelWeb(
-      require("../../assets/models/dinov2_int8.onnx"),
+      require("../../../assets/models/dinov2_int8.onnx"),
     );
     dinov2Session = await ortInstance.InferenceSession.create(dinoUri, {
       executionProviders: ["wasm"],
@@ -111,66 +118,6 @@ function getImagePixelsWeb(
   });
 }
 
-function resizeAndNormalize(
-  rawPixels: Uint8ClampedArray,
-  srcW: number,
-  srcH: number,
-  targetW: number,
-  targetH: number,
-  normalizeImageNet: boolean = false,
-  cropBox?: { x1: number; y1: number; x2: number; y2: number },
-): Float32Array {
-  const x1 = cropBox ? Math.max(0, Math.floor(cropBox.x1)) : 0;
-  const y1 = cropBox ? Math.max(0, Math.floor(cropBox.y1)) : 0;
-  const x2 = cropBox ? Math.min(srcW, Math.floor(cropBox.x2)) : srcW;
-  const y2 = cropBox ? Math.min(srcH, Math.floor(cropBox.y2)) : srcH;
-
-  const cropW = x2 - x1;
-  const cropH = y2 - y1;
-
-  const out = new Float32Array(3 * targetW * targetH);
-  const mean = [0.485, 0.456, 0.406];
-  const std = [0.229, 0.224, 0.225];
-
-  for (let y = 0; y < targetH; y++) {
-    for (let x = 0; x < targetW; x++) {
-      const srcX = x1 + Math.floor((x / targetW) * cropW);
-      const srcY = y1 + Math.floor((y / targetH) * cropH);
-      const srcIdx = (srcY * srcW + srcX) * 4;
-
-      let r = rawPixels[srcIdx] / 255.0;
-      let g = rawPixels[srcIdx + 1] / 255.0;
-      let b = rawPixels[srcIdx + 2] / 255.0;
-
-      if (normalizeImageNet) {
-        r = (r - mean[0]) / std[0];
-        g = (g - mean[1]) / std[1];
-        b = (b - mean[2]) / std[2];
-      }
-
-      out[y * targetW + x] = r;
-      out[targetW * targetH + y * targetW + x] = g;
-      out[2 * targetW * targetH + y * targetW + x] = b;
-    }
-  }
-
-  return out;
-}
-
-function parseLabel(rawLabel: string): { universe: string; tome: string } {
-  let universe = "Inconnu";
-  let tome = "?";
-  if (rawLabel.includes("_tome_")) {
-    const parts = rawLabel.split("_tome_");
-    universe = parts[0]
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase());
-    const match = parts[1].match(/^(\d+)/);
-    tome = match ? match[1] : parts[1];
-  }
-  return { universe, tome };
-}
-
 export async function classifyManga(
   imageUri: string,
   minConfidence: number = 0.25,
@@ -199,34 +146,14 @@ export async function classifyManga(
   const yoloResult = yoloOutputs[Object.keys(yoloOutputs)[0]];
   const yoloData = yoloResult.data as Float32Array;
 
-  let bestBoxConf = 0;
-  let bestBox: { x1: number; y1: number; x2: number; y2: number } | null = null;
-
-  const numBoxes = 8400;
-  const numChannels = 408;
-
-  for (let i = 0; i < numBoxes; i++) {
-    let maxScore = 0;
-    for (let c = 4; c < numChannels; c++) {
-      const score = yoloData[c * numBoxes + i];
-      if (score > maxScore) maxScore = score;
-    }
-
-    if (maxScore > minConfidence && maxScore > bestBoxConf) {
-      bestBoxConf = maxScore;
-      const xc = (yoloData[0 * numBoxes + i] / 640) * img.width;
-      const yc = (yoloData[1 * numBoxes + i] / 640) * img.height;
-      const w = (yoloData[2 * numBoxes + i] / 640) * img.width;
-      const h = (yoloData[3 * numBoxes + i] / 640) * img.height;
-
-      bestBox = {
-        x1: Math.max(0, xc - w / 2),
-        y1: Math.max(0, yc - h / 2),
-        x2: Math.min(img.width, xc + w / 2),
-        y2: Math.min(img.height, yc + h / 2),
-      };
-    }
-  }
+  const { bestBoxConf, bestBox } = decodeYoloBestBox(
+    yoloData,
+    8400,
+    408,
+    minConfidence,
+    img.width,
+    img.height,
+  );
 
   const dinoTensorData = resizeAndNormalize(
     img.data,
@@ -245,27 +172,9 @@ export async function classifyManga(
 
   const dinoOutputs = await dinov2Session!.run({ input: dinoInputTensor });
   const dinoResult = dinoOutputs[Object.keys(dinoOutputs)[0]];
-  const embData = Array.from(dinoResult.data as Float32Array);
+  const normEmb = l2Normalize(dinoResult.data as Float32Array);
 
-  let norm = 0;
-  for (let i = 0; i < embData.length; i++) norm += embData[i] * embData[i];
-  norm = Math.sqrt(norm);
-  const normEmb = embData.map((v) => v / (norm || 1.0));
-
-  let bestSim = -1;
-  let bestIdx = -1;
-
-  for (let i = 0; i < indexData.embeddings.length; i++) {
-    const refEmb = indexData.embeddings[i];
-    let dot = 0;
-    for (let j = 0; j < 384; j++) {
-      dot += normEmb[j] * refEmb[j];
-    }
-    if (dot > bestSim) {
-      bestSim = dot;
-      bestIdx = i;
-    }
-  }
+  const { bestSim, bestIdx } = findBestMatch(normEmb, indexData);
 
   if (bestSim < minSimilarity || bestIdx === -1) {
     return null;

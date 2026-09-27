@@ -6,6 +6,7 @@
     "@expo/ui": "~57.0.18",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-community/slider": "5.2.0",
+    "axios": "^1.20.0",
     "buffer": "^6.0.3",
     "expo": "~57.0.23",
     "expo-asset": "~57.0.18",
