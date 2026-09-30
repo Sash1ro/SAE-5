@@ -30,7 +30,7 @@ export default function Contribute() {
   const imageLoaded = Boolean(imageAsset?.uri);
 
   const handlePickImage = async () => {
-    showLoading("Chargement de l'image...");
+    showLoading("Loading image...");
     try {
       const asset = await pickImage();
       if (asset) {
@@ -44,7 +44,7 @@ export default function Contribute() {
   };
 
   const handleTakePhoto = async () => {
-    showLoading("Ouverture de l'appareil photo...");
+    showLoading("Loading camera...");
     try {
       const asset = await takePhoto();
       if (asset) {
@@ -68,29 +68,29 @@ export default function Contribute() {
   const handleSubmit = async () => {
     if (!imageAsset?.uri) {
       Alert.alert(
-        "Image requise",
-        "Veuillez selectionner une photo de la couverture.",
+        "Image required",
+        "Please select a cover photo.",
       );
       return;
     }
 
     if (!universe.trim()) {
       Alert.alert(
-        "Champs manquants",
-        "Veuillez renseigner le nom de la serie / univers.",
+        "Missing fields",
+        "Please fill in the series / universe name.",
       );
       return;
     }
 
     if (!tome.trim() || isNaN(Number(tome))) {
       Alert.alert(
-        "Champs invalide",
-        "Veuillez entrer un numero de tome valide.",
+        "Invalid field",
+        "Please enter a valid volume number.",
       );
       return;
     }
 
-    showLoading("Envoi de la contribution...");
+    showLoading("Submitting contribution...");
     try {
       await uploadMangaContribution({
         universe,
@@ -99,14 +99,14 @@ export default function Contribute() {
       });
 
       Alert.alert(
-        "Succes",
-        "Votre contribution a ete transmise. Elle sera integree lors de la prochaine session d'entrainement.",
+        "Success",
+        "Your contribution has been submitted. It will be incorporated during the next training session.",
       );
       handleResetForm();
     } catch (error: any) {
       Alert.alert(
-        "Erreur",
-        error.message || "Une erreur est survenue lors de l'envoi.",
+        "Error",
+        error.message || "An error occurred while submitting.",
       );
     } finally {
       hideLoading();
@@ -124,14 +124,14 @@ export default function Contribute() {
 
       <View style={styles.buttonsRow}>
         {!imageLoaded && (
-          <Button label="Galerie" fun={handlePickImage} icon="images" />
+          <Button label="Gallery" fun={handlePickImage} icon="images" />
         )}
         {!imageLoaded && isMobile && (
           <Button label="Camera" fun={handleTakePhoto} icon="aperture" />
         )}
         {imageLoaded && (
           <Button
-            label="Changer"
+            label="Change"
             fun={handleRemoveImage}
             icon="trash-bin"
             danger={true}
@@ -141,7 +141,7 @@ export default function Contribute() {
 
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Titre / Serie</Text>
+          <Text style={styles.label}>Title / Series</Text>
           <TextInput
             value={universe}
             onChangeText={setUniverse}
@@ -152,7 +152,7 @@ export default function Contribute() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Numero du Tome</Text>
+          <Text style={styles.label}>Volume number</Text>
           <TextInput
             value={tome}
             onChangeText={setTome}
@@ -166,7 +166,7 @@ export default function Contribute() {
 
       <View style={styles.submitContainer}>
         <Button
-          label="Soumettre le manga"
+          label="Submit the manga"
           fun={handleSubmit}
           icon="cloud-upload"
         />

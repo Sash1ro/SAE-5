@@ -81,12 +81,12 @@ export default function Index() {
         });
       } else {
         setErrorMessage(
-          "Ce manga ne figure pas dans l'index ou la prise de vue est trop incertaine.",
+          "This manga does not appear in the index, or the shot is too unclear.",
         );
       }
     } catch (error: any) {
       console.error(error);
-      setErrorMessage(error.message || "Erreur lors de l'analyse.");
+      setErrorMessage(error.message || "Error during parsing.");
     } finally {
       hideLoading();
     }
@@ -108,7 +108,7 @@ export default function Index() {
             color={colors.error}
           />
           <View style={styles.errorTextGroup}>
-            <Text style={styles.errorTitle}>Couverture non reconnue</Text>
+            <Text style={styles.errorTitle}>Unrecognized cover</Text>
             <Text style={styles.errorDescription}>{errorMessage}</Text>
           </View>
         </View>
