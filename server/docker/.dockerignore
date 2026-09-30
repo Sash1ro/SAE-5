@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+storage/pending/*
+!storage/pending/.gitkeep
+storage/processed/*
+!storage/processed/.gitkeep

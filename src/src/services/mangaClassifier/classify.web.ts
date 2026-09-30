@@ -1,8 +1,8 @@
 import type * as OrtType from "onnxruntime-web";
 import { Asset } from "expo-asset";
 import { DetectionResult } from "@/stores/useDetectionStore";
+import { getActiveIndex } from "@/services/indexSyncService";
 
-import indexData from "../../../assets/models/index_mangas.json";
 import {
   resizeAndNormalize,
   parseLabel,
@@ -101,15 +101,15 @@ function getImagePixelsWeb(
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         reject(new Error("Impossible d'initialiser le contexte canvas 2D."));
-        return;
+      } else {
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        resolve({
+          data: imgData.data,
+          width: canvas.width,
+          height: canvas.height,
+        });
       }
-      ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      resolve({
-        data: imgData.data,
-        width: canvas.width,
-        height: canvas.height,
-      });
     };
     img.onerror = () => {
       reject(new Error("Erreur lors du chargement de l'image sur le Web."));
@@ -121,12 +121,15 @@ function getImagePixelsWeb(
 export async function classifyManga(
   imageUri: string,
   minConfidence: number = 0.25,
-  minSimilarity: number = 0.4,
+  minSimilarity: number = 0.8,
 ): Promise<DetectionResult | null> {
   const ortInstance = await getOrt();
   await initModels();
 
-  const img = await getImagePixelsWeb(imageUri);
+  const [img, activeIndex] = await Promise.all([
+    getImagePixelsWeb(imageUri),
+    getActiveIndex(),
+  ]);
 
   const yoloTensorData = resizeAndNormalize(
     img.data,
@@ -174,13 +177,13 @@ export async function classifyManga(
   const dinoResult = dinoOutputs[Object.keys(dinoOutputs)[0]];
   const normEmb = l2Normalize(dinoResult.data as Float32Array);
 
-  const { bestSim, bestIdx } = findBestMatch(normEmb, indexData);
+  const { bestSim, bestIdx } = findBestMatch(normEmb, activeIndex);
 
   if (bestSim < minSimilarity || bestIdx === -1) {
     return null;
   }
 
-  const rawLabel = indexData.labels[bestIdx];
+  const rawLabel = activeIndex.labels[bestIdx];
   const { universe, tome } = parseLabel(rawLabel);
 
   return {

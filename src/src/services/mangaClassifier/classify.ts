@@ -5,8 +5,8 @@ import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system/legacy";
 import jpeg from "jpeg-js";
 import { DetectionResult } from "@/stores/useDetectionStore";
+import { getActiveIndex } from "@/services/indexSyncService";
 
-import indexData from "../../../assets/models/index_mangas.json";
 import {
   resizeAndNormalize,
   parseLabel,
@@ -37,7 +37,9 @@ export async function initModels(): Promise<void> {
   }
 
   if (!yoloSession) {
-    const yoloUri = await loadModel(require("../../../assets/models/yolo.onnx"));
+    const yoloUri = await loadModel(
+      require("../../../assets/models/yolo.onnx"),
+    );
     yoloSession = await ort!.InferenceSession.create(yoloUri);
   }
   if (!dinov2Session) {
@@ -66,11 +68,14 @@ async function getImagePixels(
 export async function classifyManga(
   imageUri: string,
   minConfidence: number = 0.25,
-  minSimilarity: number = 0.4,
+  minSimilarity: number = 0.8,
 ): Promise<DetectionResult | null> {
   await initModels();
 
-  const img = await getImagePixels(imageUri);
+  const [img, activeIndex] = await Promise.all([
+    getImagePixels(imageUri),
+    getActiveIndex(),
+  ]);
 
   const yoloTensorData = resizeAndNormalize(
     img.data,
@@ -118,13 +123,13 @@ export async function classifyManga(
   const dinoResult = dinoOutputs[Object.keys(dinoOutputs)[0]];
   const normEmb = l2Normalize(dinoResult.data as Float32Array);
 
-  const { bestSim, bestIdx } = findBestMatch(normEmb, indexData);
+  const { bestSim, bestIdx } = findBestMatch(normEmb, activeIndex);
 
   if (bestSim < minSimilarity || bestIdx === -1) {
     return null;
   }
 
-  const rawLabel = indexData.labels[bestIdx];
+  const rawLabel = activeIndex.labels[bestIdx];
   const { universe, tome } = parseLabel(rawLabel);
 
   return {

@@ -57,7 +57,10 @@ export function resizeAndNormalize(
   return out;
 }
 
-export function parseLabel(rawLabel: string): { universe: string; tome: string } {
+export function parseLabel(rawLabel: string): {
+  universe: string;
+  tome: string;
+} {
   let universe = "Inconnu";
   let tome = "?";
   if (rawLabel.includes("_tome_")) {
@@ -121,20 +124,37 @@ export function findBestMatch(
   normEmb: number[],
   indexData: IndexData,
   embDim: number = 384,
+  minMargin: number = 0.04,
 ): { bestSim: number; bestIdx: number } {
-  let bestSim = -1;
-  let bestIdx = -1;
-
-  for (let i = 0; i < indexData.embeddings.length; i++) {
-    const refEmb = indexData.embeddings[i];
+  const scores = indexData.embeddings.map((refEmb, i) => {
     let dot = 0;
     for (let j = 0; j < embDim; j++) {
       dot += normEmb[j] * refEmb[j];
     }
-    if (dot > bestSim) {
-      bestSim = dot;
-      bestIdx = i;
-    }
+    return { idx: i, label: indexData.labels[i], score: dot };
+  });
+
+  scores.sort((a, b) => b.score - a.score);
+
+  const best = scores[0];
+  if (!best) {
+    return { bestSim: -1, bestIdx: -1 };
+  }
+
+  const bestUniverse = best.label.split("_tome_")[0];
+  const secondDifferentUniverse = scores.find((s) => {
+    const univ = s.label.split("_tome_")[0];
+    return univ !== bestUniverse;
+  });
+
+  const bestSim = best.score;
+  const bestIdx = best.idx;
+  const secondSim = secondDifferentUniverse
+    ? secondDifferentUniverse.score
+    : -1;
+
+  if (bestSim < 0.85 && secondSim > 0 && bestSim - secondSim < minMargin) {
+    return { bestSim: -1, bestIdx: -1 };
   }
 
   return { bestSim, bestIdx };

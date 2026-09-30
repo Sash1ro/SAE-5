@@ -1,32 +1,36 @@
-import { useEffect } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { useAuthStore } from '../stores/useAuthStore';
-import GlobalLoader from '@/components/globalLoader';
+import { useEffect } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useAuthStore } from "../stores/useAuthStore";
+import GlobalLoader from "@/components/globalLoader";
+import { syncIndexWithServer } from "@/services/indexSyncService";
 
 export default function RootLayout() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  
+
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-    
+    syncIndexWithServer();
+  }, []);
+
+  useEffect(() => {
+    const inAuthGroup = segments[0] === "(auth)";
+
     if (!isLoggedIn && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } 
-    else if (isLoggedIn && inAuthGroup) {
-      router.replace('/(tabs)');
+      router.replace("/(auth)/login");
+    } else if (isLoggedIn && inAuthGroup) {
+      router.replace("/(tabs)");
     }
   }, [isLoggedIn, segments]);
 
   return (
     <>
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(auth)" />
-    </Stack>
-    <GlobalLoader />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" />
+      </Stack>
+      <GlobalLoader />
     </>
   );
 }

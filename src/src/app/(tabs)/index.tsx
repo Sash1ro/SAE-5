@@ -1,7 +1,8 @@
-import { Alert, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 import { ImagePickerAsset } from "expo-image-picker";
 import { useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
 import ButtonGroup from "@/components/buttonGroup";
@@ -17,6 +18,8 @@ import { colors } from "@/stores/stylesStore";
 export default function Index() {
   const router = useRouter();
   const [imageAsset, setImageAsset] = useState<ImagePickerAsset | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const imageLoaded =
     imageAsset && typeof imageAsset === "object" && "uri" in imageAsset;
   const isMobile = Platform.OS === "ios" || Platform.OS === "android";
@@ -28,6 +31,7 @@ export default function Index() {
   const addToHistory = useDetectionStore((state) => state.addToHistory);
 
   const handlePickImage = async () => {
+    setErrorMessage(null);
     showLoading("Loading image...");
     try {
       const asset = await pickImage();
@@ -42,6 +46,7 @@ export default function Index() {
   };
 
   const handleTakePhoto = async () => {
+    setErrorMessage(null);
     showLoading("Loading photo...");
     try {
       const asset = await takePhoto();
@@ -55,14 +60,18 @@ export default function Index() {
     }
   };
 
-  const handleRemove = () => setImageAsset(null);
+  const handleRemove = () => {
+    setImageAsset(null);
+    setErrorMessage(null);
+  };
 
   const handleRunDetection = async () => {
     if (!imageAsset?.uri) return;
 
+    setErrorMessage(null);
     showLoading("IA Identification...");
     try {
-      const result = await classifyManga(imageAsset.uri, 0.2, 0.4);
+      const result = await classifyManga(imageAsset.uri, 0.2, 0.8);
       if (result) {
         setCurrentDetection(result);
         addToHistory(result);
@@ -71,14 +80,13 @@ export default function Index() {
           params: { title: `${result.universe}-Tome-${result.tome}` },
         });
       } else {
-        Alert.alert(
-          "Not found",
-          "No manga found with enough confidence",
+        setErrorMessage(
+          "Ce manga ne figure pas dans l'index ou la prise de vue est trop incertaine.",
         );
       }
     } catch (error: any) {
       console.error(error);
-      Alert.alert("Error", error.message || "Error while analysing");
+      setErrorMessage(error.message || "Erreur lors de l'analyse.");
     } finally {
       hideLoading();
     }
@@ -91,20 +99,27 @@ export default function Index() {
     >
       <View style={styles.flexSpacer} />
       <ImageViewer imgSource={imageAsset?.uri ?? null} />
+
+      {errorMessage && (
+        <View style={styles.errorBox}>
+          <Ionicons
+            name="alert-circle-outline"
+            size={24}
+            color={colors.error}
+          />
+          <View style={styles.errorTextGroup}>
+            <Text style={styles.errorTitle}>Couverture non reconnue</Text>
+            <Text style={styles.errorDescription}>{errorMessage}</Text>
+          </View>
+        </View>
+      )}
+
       <ButtonGroup>
         {!imageLoaded && (
-          <Button
-            label="Select Image"
-            fun={handlePickImage}
-            icon={"images"}
-          ></Button>
+          <Button label="Select Image" fun={handlePickImage} icon={"images"} />
         )}
         {!imageLoaded && isMobile && (
-          <Button
-            label="Take Photo"
-            fun={handleTakePhoto}
-            icon={"aperture"}
-          ></Button>
+          <Button label="Take Photo" fun={handleTakePhoto} icon={"aperture"} />
         )}
         {imageLoaded && (
           <Button
@@ -112,14 +127,10 @@ export default function Index() {
             fun={handleRemove}
             icon={"trash-bin"}
             danger={true}
-          ></Button>
+          />
         )}
         {imageLoaded && (
-          <Button
-            label="Fetch data"
-            fun={handleRunDetection}
-            icon={"search"}
-          ></Button>
+          <Button label="Fetch data" fun={handleRunDetection} icon={"search"} />
         )}
       </ButtonGroup>
       <View style={styles.flexSpacer} />
@@ -131,12 +142,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     flexBasis: "auto",
-    alignItems: "center", 
-    paddingVertical: 24,  
-    gap: 20,              
+    alignItems: "center",
+    paddingVertical: 24,
+    gap: 20,
   },
   flexSpacer: {
-    flex: 1, 
-    minHeight: 16, 
+    flex: 1,
+    minHeight: 16,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.error,
+    backgroundColor: colors.background,
+    width: "90%",
+    maxWidth: 360,
+  },
+  errorTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  errorTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.onBg,
+  },
+  errorDescription: {
+    fontSize: 13,
+    color: colors.altText,
+    lineHeight: 18,
   },
 });
