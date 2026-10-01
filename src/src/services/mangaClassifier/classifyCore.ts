@@ -61,7 +61,7 @@ export function parseLabel(rawLabel: string): {
   universe: string;
   tome: string;
 } {
-  let universe = "Inconnu";
+  let universe = "Unknown";
   let tome = "?";
   if (rawLabel.includes("_tome_")) {
     const parts = rawLabel.split("_tome_");

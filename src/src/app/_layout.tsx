@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useAuthStore } from "../stores/useAuthStore";
 import GlobalLoader from "@/components/globalLoader";
-import { syncIndexWithServer } from "@/services/indexSyncService";
+import { syncIndexWithServer } from "@/services/indexSync/indexManager";
 
 export default function RootLayout() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);

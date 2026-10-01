@@ -5,7 +5,7 @@ import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system/legacy";
 import jpeg from "jpeg-js";
 import { DetectionResult } from "@/stores/useDetectionStore";
-import { getActiveIndex } from "@/services/indexSyncService";
+import { getActiveIndex } from "@/services/indexSync/indexManager";
 
 import {
   resizeAndNormalize,

@@ -115,6 +115,7 @@ export default function Contribute() {
 
   return (
     <ScreenScrollView
+      backgroundColor={colors.bg2}
       withKeyboardAvoiding={true}
       contentContainerStyle={styles.scrollContent}
     >
@@ -124,14 +125,14 @@ export default function Contribute() {
 
       <View style={styles.buttonsRow}>
         {!imageLoaded && (
-          <Button label="Gallery" fun={handlePickImage} icon="images" />
+          <Button label="Select Image" fun={handlePickImage} icon="images" />
         )}
         {!imageLoaded && isMobile && (
-          <Button label="Camera" fun={handleTakePhoto} icon="aperture" />
+          <Button label="Take Photo" fun={handleTakePhoto} icon="aperture" />
         )}
         {imageLoaded && (
           <Button
-            label="Change"
+            label="Remove"
             fun={handleRemoveImage}
             icon="trash-bin"
             danger={true}

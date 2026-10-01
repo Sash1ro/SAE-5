@@ -2,6 +2,7 @@ import random
 import cv2
 import numpy as np
 
+#Nombre d'heure gaspiller : 3H
 def apply_glare(image: np.ndarray) -> np.ndarray:
     h, w = image.shape[:2]
     overlay = image.copy()

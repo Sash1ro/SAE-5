@@ -71,7 +71,7 @@ export default function Index() {
     setErrorMessage(null);
     showLoading("IA Identification...");
     try {
-      const result = await classifyManga(imageAsset.uri, 0.2, 0.8);
+      const result = await classifyManga(imageAsset.uri, 0.2, 0.4);
       if (result) {
         setCurrentDetection(result);
         addToHistory(result);

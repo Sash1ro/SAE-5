@@ -1,7 +1,7 @@
 import type * as OrtType from "onnxruntime-web";
 import { Asset } from "expo-asset";
 import { DetectionResult } from "@/stores/useDetectionStore";
-import { getActiveIndex } from "@/services/indexSyncService";
+import { getActiveIndex } from "@/services/indexSync/indexManager";
 
 import {
   resizeAndNormalize,
@@ -32,7 +32,7 @@ async function getOrt(): Promise<typeof OrtType> {
         resolve(ort!);
       });
       existingScript.addEventListener("error", () => {
-        reject(new Error("Erreur de chargement du script onnxruntime-web."));
+        reject(new Error("Error while loading onnxruntime-web script."));
       });
       return;
     }
@@ -49,12 +49,12 @@ async function getOrt(): Promise<typeof OrtType> {
         ort.env.wasm.numThreads = 1;
         resolve(ort);
       } else {
-        reject(new Error("onnxruntime-web introuvable sur window.ort."));
+        reject(new Error("unable to find onnxruntime-web on window.ort."));
       }
     };
     script.onerror = () => {
       reject(
-        new Error("Impossible de telecharger onnxruntime-web depuis le CDN."),
+        new Error("Impossible to download onnxruntime-web from CDN."),
       );
     };
     document.head.appendChild(script);
@@ -100,7 +100,7 @@ function getImagePixelsWeb(
       canvas.height = img.naturalHeight || img.height;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error("Impossible d'initialiser le contexte canvas 2D."));
+        reject(new Error("Impossible to init 2D Canvas context"));
       } else {
         ctx.drawImage(img, 0, 0);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -112,7 +112,7 @@ function getImagePixelsWeb(
       }
     };
     img.onerror = () => {
-      reject(new Error("Erreur lors du chargement de l'image sur le Web."));
+      reject(new Error("Error while loading image on the web"));
     };
     img.src = uri;
   });
