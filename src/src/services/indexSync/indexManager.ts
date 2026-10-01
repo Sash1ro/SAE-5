@@ -26,8 +26,8 @@ export async function syncIndexWithServer(): Promise<void> {
         memoryIndex = newIndex;
       }
     }
-  } catch {
-    // silent error
+  } catch (e) {
+    console.error("Index syncing failed : ", e)
   }
 }
 
