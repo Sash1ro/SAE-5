@@ -1,9 +1,11 @@
 import Button from '@/components/button';
+import ButtonGroup from '@/components/buttonGroup';
+import ScreenScrollView from '@/components/screenscrollView';
 import { colors } from '@/stores/stylesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View, StyleSheet, TextInput } from 'react-native';
+import { Text, View, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 
 export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
@@ -16,6 +18,11 @@ export default function LoginScreen() {
   const { signup } = useLocalSearchParams();
   const accountCreation = signup === "1";
   const router = useRouter();
+
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const isLandscape = width > height;
+  const isSmallHeight = height < 700;
 
   const handleLogin = () => {
     setError('');
@@ -48,20 +55,25 @@ export default function LoginScreen() {
     login();
   }
 
-  return (
-    <View style={styles.container}>
+  const dynamicStyles = getDynamicStyles({ isTablet, isLandscape, isSmallHeight });
 
-      <Text style={styles.title}>
+  return (
+    <ScreenScrollView
+      withKeyboardAvoiding
+      contentContainerStyle={styles.scrollContent}
+      minTopPadding={isSmallHeight ? 24 : 40}
+    >
+      <Text style={[styles.title, dynamicStyles.title]}>
         Welcome {!accountCreation ? "Back " : ""}to Manganitor
       </Text>
 
-      <View style={styles.formContainer}>
+      <View style={[styles.formContainer, dynamicStyles.formContainer]}>
         {error !== "" ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : null}
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, dynamicStyles.input]}
           placeholder='mail@domain.com'
           placeholderTextColor={colors.placeHolder}
           keyboardType="email-address"
@@ -71,7 +83,7 @@ export default function LoginScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, dynamicStyles.input]}
           placeholder='strong password'
           placeholderTextColor={colors.placeHolder}
           textContentType='password'
@@ -83,7 +95,7 @@ export default function LoginScreen() {
 
         {accountCreation && (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             placeholder='repeat password'
             textContentType='password'
             autoCapitalize="none"
@@ -94,46 +106,68 @@ export default function LoginScreen() {
           />
         )}
 
-        <View style={styles.buttons}>
-          <Button 
-            label={accountCreation ? 'Create' : 'Login'} 
-            fun={handleLogin} 
+        <ButtonGroup style={styles.buttons}>
+          <Button
+            label={accountCreation ? 'Create' : 'Login'}
+            fun={handleLogin}
             icon={accountCreation ? 'person-add' : 'person'}
           />
-          <Button 
+          <Button
             alt={true}
-            label={accountCreation ? 'Back' : 'Sign up'} 
+            label={accountCreation ? 'Back' : 'Sign up'}
             fun={() => {
-              setError(''); 
+              setError('');
               router.setParams({ signup: accountCreation ? "" : "1" });
-            }} 
+            }}
             icon={accountCreation ? 'arrow-back' : 'person-add'}
           />
-        </View>
+        </ButtonGroup>
       </View>
-    </View>
+    </ScreenScrollView>
   );
 }
 
+function getDynamicStyles({
+  isTablet,
+  isLandscape,
+  isSmallHeight,
+}: {
+  isTablet: boolean;
+  isLandscape: boolean;
+  isSmallHeight: boolean;
+}) {
+  return {
+    title: {
+      fontSize: isTablet ? 34 : isSmallHeight ? 22 : 28,
+      marginBottom: isSmallHeight ? 24 : 40,
+    },
+    formContainer: {
+      maxWidth: isTablet ? 420 : 350,
+      width: isLandscape && !isTablet ? '60%' : '85%',
+    },
+    input: {
+      padding: isSmallHeight ? 12 : 16,
+      fontSize: isTablet ? 17 : 16,
+    },
+  } as const;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    paddingHorizontal: 16,
   },
   title: {
-    fontSize: 28,
     fontWeight: '700',
     color: colors.altText,
-    marginBottom: 40,
     textAlign: 'center',
   },
   formContainer: {
     width: '85%',
     justifyContent: 'center',
     alignItems: 'center',
-    maxWidth: 350,
     gap: 16,
   },
   input: {
@@ -142,17 +176,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
     color: colors.altText,
   },
   buttons: {
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    flexDirection: 'row',
-    marginTop: 10, 
+    marginTop: 10,
   },
   errorText: {
     color: colors.error,

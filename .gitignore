@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -41,3 +42,27 @@ example
 # generated native folders
 /ios
 /android
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+server/venv/
+
+# PyTorch & YOLO runs
+*.pt
+runs/
+.cache/
+
+# Server storage uploads
+server/storage/pending/*
+!server/storage/pending/.gitkeep
+server/storage/processed/*
+!server/storage/processed/.gitkeep

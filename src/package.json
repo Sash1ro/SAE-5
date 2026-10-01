@@ -6,10 +6,14 @@
     "@expo/ui": "~57.0.18",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-community/slider": "5.2.0",
+    "axios": "^1.20.0",
+    "buffer": "^6.0.3",
     "expo": "~57.0.23",
+    "expo-asset": "~57.0.18",
     "expo-camera": "~57.0.5",
     "expo-constants": "~57.0.18",
     "expo-device": "~57.0.2",
+    "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
     "expo-glass-effect": "~57.0.3",
     "expo-image": "~57.0.5",
@@ -21,6 +25,9 @@
     "expo-symbols": "~57.0.3",
     "expo-system-ui": "~57.0.4",
     "expo-web-browser": "~57.0.3",
+    "jpeg-js": "^0.4.4",
+    "onnxruntime-react-native": "^1.24.3",
+    "onnxruntime-web": "^1.30.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -33,14 +40,15 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint"
   },

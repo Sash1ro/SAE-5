@@ -41,3 +41,25 @@ example
 # generated native folders
 /ios
 /android
+
+# Python and virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Server storage uploads
+server/storage/pending/*
+!server/storage/pending/.gitkeep
+server/storage/processed/*
+!server/storage/processed/.gitkeep
+
+# Environment variables
+.env
+.env.*
+!.env.example
