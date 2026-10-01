@@ -27,7 +27,7 @@ export async function syncIndexWithServer(): Promise<void> {
       }
     }
   } catch {
-    // error
+    // silent error
   }
 }
 
