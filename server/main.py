@@ -15,6 +15,8 @@ from config import (
     SERVER_PORT,
 )
 from pipeline.update_index import run_batch_update
+from database import init_db
+from controller import user_controller, history_controller
 
 app = FastAPI(title="Manga Recognition API")
 
@@ -28,6 +30,10 @@ app.add_middleware(
 
 PENDING_DIR.mkdir(parents=True, exist_ok=True)
 PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+
+init_db()
+app.include_router(user_controller.router)
+app.include_router(history_controller.router)
 
 if not VERSION_FILE.exists():
     with open(VERSION_FILE, "w", encoding="utf-8") as f:

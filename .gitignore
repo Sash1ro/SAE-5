@@ -66,3 +66,5 @@ server/storage/pending/*
 !server/storage/pending/.gitkeep
 server/storage/processed/*
 !server/storage/processed/.gitkeep
+# Server database (temporaire)
+server/storage/app.db

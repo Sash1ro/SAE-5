@@ -15,3 +15,9 @@ ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
 SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
+
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{STORAGE_DIR / 'app.db'}")
+
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-a-changer-en-production-0123456789")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_HOURS = 24 * 7
