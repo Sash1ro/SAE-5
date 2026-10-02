@@ -23,6 +23,35 @@ function generateCacheKey(universe: string, tome: number): string {
     return formatToStub(`${CACHE_PREFIX}${universe.trim().toLowerCase()}_${tome}`);
 }
 
+function findMangaBestResult(title: string, mangas: Array<any>): any {
+    const normalizedQuery = title.toLowerCase().trim();
+    const scoredMangas = mangas.map((manga: any) => {
+        const attrs = manga.attributes;
+        const titleObj = attrs.title || {};
+        const titlesList = Object.values(titleObj) as string[];
+
+        let score = 0;
+
+        const rating = attrs.contentRating;
+        if (rating === 'porn' || rating === 'erotica') return { manga, score: 0 }
+        if (attrs.publicationDemographic === 'doujinshi') return { manga, score: 0 }
+
+        for (const t of titlesList) {
+            const normTitle = t.toLowerCase().trim();
+
+            if (normTitle === normalizedQuery) {
+                score += 100;
+            } else if (normTitle.includes(normalizedQuery) || normalizedQuery.includes(normTitle)) {
+                score += 50;
+            }
+        }
+        return { manga, score };
+    });
+
+    scoredMangas.sort((a: any, b: any) => b.score - a.score);
+    return scoredMangas[0]?.manga || mangas[0] || null;
+}
+
 async function fetchMangaByTitle(title: string): Promise<any | null> {
     try {
         const res = await axios.get(`${MANGADEX_API}/manga`, {
@@ -30,10 +59,15 @@ async function fetchMangaByTitle(title: string): Promise<any | null> {
                 title: title,
                 'includes[]': ['author', 'cover_art'],
                 'order[relevance]': 'desc',
-                limit: 1
+                'contentRating[]': ['safe', 'suggestive'],
+                limit: 10
             }
         });
-        return res.data?.data?.[0] || null;
+
+        const mangas = res.data?.data;
+        if (!mangas || mangas.length === 0) return null;
+
+        return findMangaBestResult(title, mangas) || null
     } catch (error) {
         return null;
     }
@@ -66,7 +100,7 @@ async function fetchVolumeChapters(mangaId: string, volume: string) {
         const res = await axios.get(`${MANGADEX_API}/manga/${mangaId}/feed`, {
             params: {
                 limit: 500,
-                'translatedLanguage[]': ['en', 'fr', 'ja-ro'],
+                'translatedLanguage[]': ['en'],
                 'order[chapter]': 'asc'
             }
         });
@@ -92,7 +126,7 @@ function extractMangaMetadata(manga: any) {
     const titleObj = attrs.title || {};
     const title = titleObj.en || titleObj.fr || titleObj['ja-ro'] || Object.values(titleObj)[0] || "Unknown Title";
     const descObj = attrs.description || {};
-    const resume = descObj.fr || descObj.en || Object.values(descObj)[0] || "No resume found";
+    const resume = descObj.en || descObj.fr || Object.values(descObj)[0] || "No resume found";
     const authorRel = manga.relationships.find((r: any) => r.type === 'author');
     const author = authorRel?.attributes?.name || "Unknown Authour";
     const coverRel = manga.relationships.find((r: any) => r.type === 'cover_art');

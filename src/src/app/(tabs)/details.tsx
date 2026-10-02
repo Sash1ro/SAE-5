@@ -7,16 +7,19 @@ import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
 import { useState, useEffect } from "react";
 import { useLoadingStore } from "@/stores/useLoadingStore";
 import ScreenScrollView from "@/components/screenscrollView";
+import { useGlobalSearchParams } from "expo-router";
 
 export default function DetailsPage() {
-  const detection = useDetectionStore((state) => state.currentDetection);
   const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
   const [fetchFailed, setFetchFailed] = useState(false);
   const showLoading = useLoadingStore((state) => state.showLoading);
   const hideLoading = useLoadingStore((state) => state.hideLoading);
-
+  const params = useGlobalSearchParams();
+  const title = Array.isArray(params.title) ? params.title[0] : params.title;
+  const volume = Array.isArray(params.volume) ? params.volume[0] : params.volume;
+  
   useEffect(() => {
-    if (!detection?.universe || !detection?.tome) {
+    if (!title || !volume) {
       return;
     }
 
@@ -25,8 +28,8 @@ export default function DetailsPage() {
       showLoading("Loading details...");
       setFetchFailed(false);
       try {
-        const tomeNumber = parseInt(detection.tome, 10);
-        const data = await getCompleteVolumeData(detection.universe, tomeNumber);
+        const tomeNumber = parseInt(volume, 10);
+        const data = await getCompleteVolumeData(title, tomeNumber);
         if (data) {
           setMangaDetails(data);
         } else {
@@ -38,31 +41,31 @@ export default function DetailsPage() {
       } finally {
         hideLoading();
       }
-    };
-
+  };
+    
     fetchDetails();
-  }, [detection?.universe, detection?.tome]);
+  }, [title, volume]);
 
   return (
     <ScreenScrollView
       backgroundColor={colors.bg2}
       contentContainerStyle={styles.scrollContent}
     >
-      {!detection && (
+      {(!title || !volume ) && (
         <View style={styles.emptyState}>
           <Ionicons name="albums-outline" size={48} color={colors.placeHolder} />
           <Text style={styles.emptyText}>No manga detected yet.</Text>
         </View>
       )}
 
-      {detection && fetchFailed && !mangaDetails && (
+      {params && fetchFailed && !mangaDetails && (
         <View style={styles.emptyState}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
           <Text style={styles.emptyText}>Couldn't load details for this manga.</Text>
         </View>
       )}
 
-      {detection && mangaDetails && (
+      {params && mangaDetails && (
         <View style={styles.card}>
           <View style={styles.coverWrapper}>
             {mangaDetails.volumeCoverUrl ? (
@@ -79,7 +82,7 @@ export default function DetailsPage() {
             )}
 
             <View style={styles.tomeBadge}>
-              <Text style={styles.tomeBadgeText}>Tome {detection.tome}</Text>
+              <Text style={styles.tomeBadgeText}>Tome {volume}</Text>
             </View>
           </View>
 
