@@ -3,14 +3,14 @@ import { useDetectionStore } from "@/stores/useDetectionStore";
 import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { getMangaDetails, MangaVolumeDetails } from "@/services/mangaFetcher";
+import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
 import { useState, useEffect } from "react";
 import { useLoadingStore } from "@/stores/useLoadingStore";
 import ScreenScrollView from "@/components/screenscrollView";
 
 export default function DetailsPage() {
   const detection = useDetectionStore((state) => state.currentDetection);
-  const [mangaDetails, setMangaDetails] = useState<MangaVolumeDetails | null>(null);
+  const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
   const [fetchFailed, setFetchFailed] = useState(false);
   const showLoading = useLoadingStore((state) => state.showLoading);
   const hideLoading = useLoadingStore((state) => state.hideLoading);
@@ -25,7 +25,7 @@ export default function DetailsPage() {
       setFetchFailed(false);
       try {
         const tomeNumber = parseInt(detection.tome, 10);
-        const data = await getMangaDetails(detection.universe, tomeNumber);
+        const data = await getCompleteVolumeData(detection.universe, tomeNumber);
         if (data) {
           setMangaDetails(data);
         } else {
@@ -73,9 +73,9 @@ export default function DetailsPage() {
       {detection && mangaDetails && (
         <View style={styles.card}>
           <View style={styles.coverWrapper}>
-            {mangaDetails.coverUrl ? (
+            {mangaDetails.volumeCoverUrl ? (
               <Image
-                source={mangaDetails.coverUrl}
+                source={mangaDetails.volumeCoverUrl}
                 style={styles.cover}
                 contentFit="cover"
                 transition={200}
@@ -131,12 +131,26 @@ export default function DetailsPage() {
 
           <View style={styles.chaptersBlock}>
             <Text style={styles.sectionLabel}>Chapters</Text>
-            <View style={styles.chaptersPlaceholder}>
-              <Ionicons name="construct-outline" size={20} color={colors.placeHolder} />
-              <Text style={styles.chaptersPlaceholderText}>
-                Chapter list coming soon
-              </Text>
-            </View>
+            
+            {mangaDetails.chapters && mangaDetails.chapters.length > 0 ? (
+              <View style={styles.chaptersList}>
+                {mangaDetails.chapters.map((chapter) => (
+                  <View key={chapter.chapterId} style={styles.chapterItem}>
+                    <Ionicons name="document-text-outline" size={20} color={colors.main} />
+                    <Text style={styles.chapterTitle} numberOfLines={2}>
+                      {`${chapter.chapter} - ${chapter.title}`}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.chaptersPlaceholder}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.placeHolder} />
+                <Text style={styles.chaptersPlaceholderText}>
+                  No chapter found
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -277,7 +291,26 @@ const styles = StyleSheet.create({
   },
   chaptersBlock: {
     width: "100%",
-    gap: 8,
+    gap: 12, 
+  },
+  chaptersList: {
+    width: "100%",
+    gap: 10,
+  },
+  chapterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.bg2, 
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  chapterTitle: {
+    color: colors.onBg,
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
   },
   chaptersPlaceholder: {
     flexDirection: "row",
@@ -290,5 +323,6 @@ const styles = StyleSheet.create({
   chaptersPlaceholderText: {
     color: colors.placeHolder,
     fontSize: 13,
+    flex: 1,
   },
 });

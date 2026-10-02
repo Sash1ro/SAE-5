@@ -1,106 +1,141 @@
-import { cleanResume } from '@/utils/cleanResume';
 import axios from 'axios';
-const MANGADEX_API = 'https://api.mangadex.org';
+import { cleanResume } from '@/utils/cleanResume';
 
-export interface MangaVolumeDetails {
+const MANGADEX_API = 'https://api.mangadex.org';
+const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
+
+export interface Manga {
     mangaId: string;
     title: string;
     type: string;
     status: string;
     resume: string;
-    coverUrl: string | null;
-    author?: string;
-    chapters?: Array<{ id: string; chapter: string; title?: string | null }>;
+    author: string;
+    tags: string[];
+    volumeCoverUrl: string | null;
+    chapters: Array<{ chapterId: string; title: string; chapter: number }> | null;
 }
 
-async function fetchManga(title: string): Promise<any | null> {
+async function fetchMangaByTitle(title: string): Promise<any | null> {
     try {
-        const res = await axios({
-            method: 'GET',
-            url: `${MANGADEX_API}/manga`,
+        const res = await axios.get(`${MANGADEX_API}/manga`, {
             params: {
                 title: title,
                 'includes[]': ['author', 'cover_art'],
                 'order[relevance]': 'desc',
-                'order[followedCount]': 'desc',
-                'contentRating[]': ['safe', 'suggestive']
+                limit: 1
             }
         });
-        const results = res?.data?.data;
-        if (!results || results.length === 0) return null;
-        const searchTitle = title.toLowerCase().trim();
-
-        const exactMatch = results.find((m: any) => {
-            const titleObj = m.attributes?.title || {};
-            const altTitles = m.attributes?.altTitles || [];
-            const mainTitles = Object.values(titleObj).map((t: any) => t.toLowerCase());
-            if (mainTitles.includes(searchTitle)) return true;
-            for (const alt of altTitles) {
-                if (Object.values(alt).some((t: any) => t.toLowerCase() === searchTitle)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-        return exactMatch || results[0];
+        return res.data?.data?.[0] || null;
     } catch (error) {
-        console.error("Error fetching manga:", error);
+        console.error("Error while fetching manga:", error);
         return null;
     }
 }
 
-async function fetchCover(mangaId: string, coverId: string): Promise<string | null> {
+async function fetchVolumeCoverUrl(mangaId: string, volume: string, defaultFileName?: string): Promise<string | null> {
     try {
-        const res = await axios({
-            method: 'GET',
-            url: `${MANGADEX_API}/cover/${coverId}`
+        const res = await axios.get(`${MANGADEX_API}/cover`, {
+            params: {
+                'manga[]': [mangaId],
+                limit: 100
+            }
         });
-        const fileName = res.data?.data?.attributes?.fileName;
-        if (!fileName) return null;
+        const covers = res.data?.data;
+        if (covers && Array.isArray(covers)) {
+            const exactCover = covers.find((c: any) => c.attributes?.volume === volume);
 
-        return `https://uploads.mangadex.org/covers/${mangaId}/${fileName}`;
+            if (exactCover?.attributes?.fileName) {
+                return `${COVER_BASE_URL}/${mangaId}/${exactCover.attributes.fileName}`;
+            }
+        }
     } catch (error) {
-        console.error("Error fetching cover:", error);
+        console.error("Error while fetching Volume Cover URL:", error);
+    }
+
+    return defaultFileName ? `${COVER_BASE_URL}/${mangaId}/${defaultFileName}` : null;
+}
+
+async function fetchVolumeChapters(mangaId: string, volume: string) {
+    try {
+        const res = await axios.get(`${MANGADEX_API}/manga/${mangaId}/feed`, {
+            params: {
+                limit: 500,
+                'translatedLanguage[]': ['fr', 'en'],
+                'order[chapter]': 'asc'
+            }
+        });
+
+        const allChapters = res.data?.data;
+        if (!allChapters || !Array.isArray(allChapters)) return null;
+
+        const volumeChaps = allChapters.filter((c: any) => c.attributes.volume === volume);
+        if (volumeChaps.length === 0) return null;
+
+        return volumeChaps.map((c: any) => ({
+            chapterId: c.id,
+            title: c.attributes.title || `Chapitre ${c.attributes.chapter}`,
+            chapter: Number(c.attributes.chapter)
+        }));
+    } catch (error) {
+        console.error("Erreur fetchVolumeChapters:", error);
         return null;
     }
 }
 
-export async function getMangaDetails(
-    universe: string,
-    tome: number | string
-): Promise<MangaVolumeDetails | null> {
-    const m = await fetchManga(universe);
-    if (!m) return null;
+function extractMangaMetadata(manga: any) {
+    const attrs = manga.attributes;
 
-    const titleObj = m.attributes?.title || {};
-    const title = titleObj.en || titleObj['ja-ro'] || Object.values(titleObj)[0] || "No title";
+    const titleObj = attrs.title || {};
+    const title = titleObj.en || titleObj.fr || titleObj['ja-ro'] || Object.values(titleObj)[0] || "Unknown Title";
 
-    const descObj = m.attributes?.description || {};
-    const resume = descObj.en || Object.values(descObj)[0] || "No resume";
+    const descObj = attrs.description || {};
+    const resume = descObj.fr || descObj.en || Object.values(descObj)[0] || "Aucun résumé disponible.";
 
-    const authorRel = m.relationships?.find((rel: any) => rel.type === 'author');
-    const coverRel = m.relationships?.find((rel: any) => rel.type === 'cover_art');
+    const authorRel = manga.relationships.find((r: any) => r.type === 'author');
+    const author = authorRel?.attributes?.name || "Auteur inconnu";
 
-    const authorName = authorRel?.attributes?.name ?? "Unknown Author";
+    const coverRel = manga.relationships.find((r: any) => r.type === 'cover_art');
+    const defaultCoverFileName = coverRel?.attributes?.fileName;
 
-    let coverUrl: string | null = null;
-    if (coverRel?.attributes?.fileName) {
-        coverUrl = `https://uploads.mangadex.org/covers/${m.id}/${coverRel.attributes.fileName}`;
-    } else if (coverRel?.id) {
+    const tags = attrs.tags
+        .filter((tag: any) => tag.attributes.group === 'genre' || tag.attributes.group === 'theme')
+        .map((tag: any) => tag.attributes.name.en || tag.attributes.name.fr);
 
-        coverUrl = await fetchCover(m.id, coverRel.id);
-    }
-
-    const result: MangaVolumeDetails = {
-        mangaId: m.id,
-        title: title as string,
-        type: m.type ?? "No type",
-        status: m.attributes?.status ?? "No status",
-        resume: cleanResume(resume as string),
-        coverUrl: coverUrl,
-        author: authorName,
-        chapters: []
+    return {
+        title,
+        resume: cleanResume(resume),
+        author,
+        defaultCoverFileName,
+        tags,
+        type: attrs.publicationDemographic || manga.type || "Manga",
+        status: attrs.status || "Unknown"
     };
+}
 
-    return result;
+export async function getCompleteVolumeData(universe: string, tome: number): Promise<Manga | null> {
+    const manga = await fetchMangaByTitle(universe);
+    if (!manga) return null;
+
+    const mangaId = manga.id;
+    const targetVolume = tome.toString();
+
+    const meta = extractMangaMetadata(manga);
+
+    const [volumeCoverUrl, chapters] = await Promise.all([
+        fetchVolumeCoverUrl(mangaId, targetVolume, meta.defaultCoverFileName),
+        fetchVolumeChapters(mangaId, targetVolume)
+    ]);
+
+    return {
+        mangaId: mangaId,
+        title: meta.title,
+        type: meta.type,
+        status: meta.status,
+        resume: meta.resume,
+        author: meta.author,
+        tags: meta.tags,
+        volumeCoverUrl: volumeCoverUrl,
+        chapters: chapters
+    };
 }
