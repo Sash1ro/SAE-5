@@ -27,7 +27,7 @@ export async function syncIndexWithServer(): Promise<void> {
       }
     }
   } catch (e) {
-    console.error("Index syncing failed : ", e)
+    console.info("Index syncing failed : ", e) // can fail
   }
 }
 

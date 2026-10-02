@@ -6,6 +6,6 @@ export function cleanResume(text: string): string {
     cleanText = cleanText.replace(/^(Source:\s*[a-zA-Z0-9\s]+)\r?\n/i, '');
     cleanText = cleanText.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
     cleanText = cleanText.replace(/\*\*/g, '').replace(/\*/g, '');
-
+    cleanText = cleanText.replace(/\[[^\]]*\]/g, '');
     return cleanText.trim();
 }

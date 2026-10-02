@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { cleanResume } from '@/utils/cleanResume';
+import { getCache, setCache } from '@/services/cacheService';
+import { formatToStub } from '@/utils/utils';
 
 const MANGADEX_API = 'https://api.mangadex.org';
 const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
+const CACHE_PREFIX = '@manga_fetcher_cache_';
 
 export interface Manga {
     mangaId: string;
@@ -14,6 +17,10 @@ export interface Manga {
     tags: string[];
     volumeCoverUrl: string | null;
     chapters: Array<{ chapterId: string; title: string; chapter: number }> | null;
+}
+
+function generateCacheKey(universe: string, tome: number): string {
+    return formatToStub(`${CACHE_PREFIX}${universe.trim().toLowerCase()}_${tome}`);
 }
 
 async function fetchMangaByTitle(title: string): Promise<any | null> {
@@ -28,7 +35,6 @@ async function fetchMangaByTitle(title: string): Promise<any | null> {
         });
         return res.data?.data?.[0] || null;
     } catch (error) {
-        console.error("Error while fetching manga:", error);
         return null;
     }
 }
@@ -50,7 +56,6 @@ async function fetchVolumeCoverUrl(mangaId: string, volume: string, defaultFileN
             }
         }
     } catch (error) {
-        console.error("Error while fetching Volume Cover URL:", error);
     }
 
     return defaultFileName ? `${COVER_BASE_URL}/${mangaId}/${defaultFileName}` : null;
@@ -61,7 +66,7 @@ async function fetchVolumeChapters(mangaId: string, volume: string) {
         const res = await axios.get(`${MANGADEX_API}/manga/${mangaId}/feed`, {
             params: {
                 limit: 500,
-                'translatedLanguage[]': ['fr', 'en'],
+                'translatedLanguage[]': ['en', 'fr', 'ja-ro'],
                 'order[chapter]': 'asc'
             }
         });
@@ -74,27 +79,22 @@ async function fetchVolumeChapters(mangaId: string, volume: string) {
 
         return volumeChaps.map((c: any) => ({
             chapterId: c.id,
-            title: c.attributes.title || `Chapitre ${c.attributes.chapter}`,
+            title: c.attributes.title || `Chapter ${c.attributes.chapter}`,
             chapter: Number(c.attributes.chapter)
         }));
     } catch (error) {
-        console.error("Erreur fetchVolumeChapters:", error);
         return null;
     }
 }
 
 function extractMangaMetadata(manga: any) {
     const attrs = manga.attributes;
-
     const titleObj = attrs.title || {};
     const title = titleObj.en || titleObj.fr || titleObj['ja-ro'] || Object.values(titleObj)[0] || "Unknown Title";
-
     const descObj = attrs.description || {};
-    const resume = descObj.fr || descObj.en || Object.values(descObj)[0] || "Aucun résumé disponible.";
-
+    const resume = descObj.fr || descObj.en || Object.values(descObj)[0] || "No resume found";
     const authorRel = manga.relationships.find((r: any) => r.type === 'author');
-    const author = authorRel?.attributes?.name || "Auteur inconnu";
-
+    const author = authorRel?.attributes?.name || "Unknown Authour";
     const coverRel = manga.relationships.find((r: any) => r.type === 'cover_art');
     const defaultCoverFileName = coverRel?.attributes?.fileName;
 
@@ -114,6 +114,13 @@ function extractMangaMetadata(manga: any) {
 }
 
 export async function getCompleteVolumeData(universe: string, tome: number): Promise<Manga | null> {
+    const cacheKey = generateCacheKey(universe, tome);
+    const cached = await getCache<Manga>(cacheKey);
+
+    if (cached.found && cached.data) {
+        return cached.data;
+    }
+
     const manga = await fetchMangaByTitle(universe);
     if (!manga) return null;
 
@@ -124,10 +131,10 @@ export async function getCompleteVolumeData(universe: string, tome: number): Pro
 
     const [volumeCoverUrl, chapters] = await Promise.all([
         fetchVolumeCoverUrl(mangaId, targetVolume, meta.defaultCoverFileName),
-        fetchVolumeChapters(mangaId, targetVolume)
+        fetchVolumeChapters(mangaId, targetVolume),
     ]);
 
-    return {
+    const result: Manga = {
         mangaId: mangaId,
         title: meta.title,
         type: meta.type,
@@ -138,4 +145,7 @@ export async function getCompleteVolumeData(universe: string, tome: number): Pro
         volumeCoverUrl: volumeCoverUrl,
         chapters: chapters
     };
+
+    await setCache(cacheKey, result);
+    return result;
 }

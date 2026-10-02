@@ -1,6 +1,6 @@
-import { colors, container } from "@/stores/stylesStore";
+import { colors } from "@/stores/stylesStore";
 import { useDetectionStore } from "@/stores/useDetectionStore";
-import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
@@ -21,6 +21,7 @@ export default function DetailsPage() {
     }
 
     const fetchDetails = async () => {
+      setMangaDetails(null);
       showLoading("Loading details...");
       setFetchFailed(false);
       try {
@@ -42,8 +43,6 @@ export default function DetailsPage() {
     fetchDetails();
   }, [detection?.universe, detection?.tome]);
 
-  const isLoadingDetails = !!detection && !mangaDetails && !fetchFailed;
-
   return (
     <ScreenScrollView
       backgroundColor={colors.bg2}
@@ -53,13 +52,6 @@ export default function DetailsPage() {
         <View style={styles.emptyState}>
           <Ionicons name="albums-outline" size={48} color={colors.placeHolder} />
           <Text style={styles.emptyText}>No manga detected yet.</Text>
-        </View>
-      )}
-
-      {isLoadingDetails && (
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={colors.main} />
-          <Text style={styles.loadingText}>Fetching manga details...</Text>
         </View>
       )}
 
@@ -147,7 +139,7 @@ export default function DetailsPage() {
               <View style={styles.chaptersPlaceholder}>
                 <Ionicons name="information-circle-outline" size={20} color={colors.placeHolder} />
                 <Text style={styles.chaptersPlaceholderText}>
-                  No chapter found
+                  No chapter founds
                 </Text>
               </View>
             )}

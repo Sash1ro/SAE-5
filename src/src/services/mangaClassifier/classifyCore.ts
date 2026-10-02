@@ -1,3 +1,5 @@
+import { formatToStub } from "@/utils/utils";
+
 export interface Box {
   x1: number;
   y1: number;
@@ -10,8 +12,15 @@ export interface IndexData {
   labels: string[];
 }
 
+const CACHE_PREFIX = '@manga_detection_cache_';
 const IMAGENET_MEAN = [0.485, 0.456, 0.406];
 const IMAGENET_STD = [0.229, 0.224, 0.225];
+export const DEF_CONFIDENCE = 0.2
+export const DEF_SIMILARITY = 0.4
+
+export function generateDetectionCacheKey(imageName: string, minConfidence: number, minSimilarity: number): string {
+  return formatToStub(`${CACHE_PREFIX}${imageName}_${minConfidence}_${minSimilarity}`);
+}
 
 export function resizeAndNormalize(
   rawPixels: Uint8Array | Uint8ClampedArray,
