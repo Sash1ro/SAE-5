@@ -37,7 +37,7 @@ export async function uploadMangaContribution(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(errorBody || "Erreur lors de l'envoi de la contribution.");
+    throw new Error(errorBody || "Error while sending contributions.");
   }
 
   return true;

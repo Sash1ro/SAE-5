@@ -2,6 +2,7 @@ import type * as OrtType from "onnxruntime-web";
 import { Asset } from "expo-asset";
 import { DetectionResult } from "@/stores/useDetectionStore";
 import { getActiveIndex } from "@/services/indexSync/indexManager";
+import { getCache, setCache } from "../cacheService";
 
 import {
   resizeAndNormalize,
@@ -9,7 +10,11 @@ import {
   decodeYoloBestBox,
   l2Normalize,
   findBestMatch,
+  generateDetectionCacheKey,
+  DEF_CONFIDENCE,
+  DEF_SIMILARITY
 } from "./classifyCore";
+import { ImagePickerAsset } from "expo-image-picker";
 
 let ort: typeof OrtType | null = null;
 let yoloSession: OrtType.InferenceSession | null = null;
@@ -119,10 +124,19 @@ function getImagePixelsWeb(
 }
 
 export async function classifyManga(
-  imageUri: string,
-  minConfidence: number = 0.25,
-  minSimilarity: number = 0.8,
+  image: ImagePickerAsset,
+  minConfidence: number = DEF_CONFIDENCE,
+  minSimilarity: number = DEF_SIMILARITY,
 ): Promise<DetectionResult | null> {
+  const imageUri = image.uri
+  const imageName = image.fileName ?? "file"
+  const cacheKey = generateDetectionCacheKey(imageName, minConfidence, minSimilarity);
+
+  const cached = await getCache<DetectionResult | null>(cacheKey);
+  if (cached.found) {
+    return cached.data;
+  }
+
   const ortInstance = await getOrt();
   await initModels();
 
@@ -179,19 +193,23 @@ export async function classifyManga(
 
   const { bestSim, bestIdx } = findBestMatch(normEmb, activeIndex);
 
-  if (bestSim < minSimilarity || bestIdx === -1) {
-    return null;
+  let result: DetectionResult | null = null;
+
+  if (bestSim >= minSimilarity && bestIdx !== -1) {
+    const rawLabel = activeIndex.labels[bestIdx];
+    const { universe, tome } = parseLabel(rawLabel);
+
+    result = {
+      label: rawLabel,
+      universe,
+      tome,
+      similarity: Math.round(bestSim * 1000) / 1000,
+      confidence: Math.round(bestBoxConf * 1000) / 1000,
+      box: bestBox ?? undefined,
+    };
   }
 
-  const rawLabel = activeIndex.labels[bestIdx];
-  const { universe, tome } = parseLabel(rawLabel);
-
-  return {
-    label: rawLabel,
-    universe,
-    tome,
-    similarity: Math.round(bestSim * 1000) / 1000,
-    confidence: Math.round(bestBoxConf * 1000) / 1000,
-    box: bestBox ?? undefined,
-  };
+  await setCache(cacheKey, result);
+  return result;
 }
+
