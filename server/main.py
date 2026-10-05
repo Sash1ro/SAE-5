@@ -5,7 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import PENDING_DIR, PUBLIC_DIR, VERSION_FILE, SERVER_HOST, SERVER_PORT
 from database import init_db
-from controller import user_controller, history_controller, contribution_controller, index_controller
+
+from controller.user_controller import router as user_router
+from controller.history_controller import router as history_router
+from controller.contribution_controller import router as contribution_router
+from controller.index_controller import router as index_router
 
 app = FastAPI(title="Manganitor")
 
@@ -21,10 +25,10 @@ PENDING_DIR.mkdir(parents=True, exist_ok=True)
 PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
 
 init_db()
-app.include_router(user_controller.router)
-app.include_router(history_controller.router)
-app.include_router(contribution_controller.router)
-app.include_router(index_controller.router)
+app.include_router(index_router)
+app.include_router(user_router)
+app.include_router(history_router)
+app.include_router(contribution_router)
 
 if not VERSION_FILE.exists():
     with open(VERSION_FILE, "w", encoding="utf-8") as f:
