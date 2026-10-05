@@ -10,7 +10,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./storage:/app/storage
       - torch_cache:/root/.cache/torch
