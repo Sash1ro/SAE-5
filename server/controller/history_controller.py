@@ -1,6 +1,7 @@
 from typing import Literal
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, delete, select
 
@@ -26,6 +27,16 @@ def get_history(user: User = Depends(get_current_user), session: Session = Depen
         select(History).where(History.user_id == user.id).order_by(History.created_at.desc())
     ).all()
     return [entry.to_dict() for entry in entries]
+
+@router.get("/{history_id}")
+def get_history_entry(history_id: UUID, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    entry = session.get(History, history_id)
+    if entry is None or entry.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Historique introuvable.",
+        )
+    return entry.to_dict()
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def add_history(data: HistoryCreate, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
