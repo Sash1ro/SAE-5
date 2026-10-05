@@ -1,48 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from typing import Literal
+
+from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel, Field
 from sqlmodel import Session, delete, select
 
 from controller.user_controller import get_current_user
 from database import get_session
-from model.scan import Scan
+from model.history import History
 from model.user import User
 
 router = APIRouter(prefix="/api/user/history", tags=["history"])
 
-class ScanCreate(BaseModel):
-    universe: str
-    tome: str
-    similarity: float
-    confidence: float
+class HistoryCreate(BaseModel):
+    image_64: str
+    universe_name: str
+    universe_volume: float = Field(ge=0)
+    ia_confidence: float = Field(ge=0, le=1)
+    ia_similarity: float = Field(ge=0, le=1)
+    history_result: Literal["failed", "success"]
+    history_type: Literal["detection", "contribution"]
 
 @router.get("")
 def get_history(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    scans = session.exec(
-        select(Scan).where(Scan.user_id == user.id).order_by(Scan.created_at.desc())
+    entries = session.exec(
+        select(History).where(History.user_id == user.id).order_by(History.created_at.desc())
     ).all()
-    return [scan.to_dict() for scan in scans]
+    return [entry.to_dict() for entry in entries]
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def add_scan(data: ScanCreate, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    if not data.universe.strip() or not data.tome.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Universe et tome sont obligatoires.",
-        )
-
-    scan = Scan(
-        user_id=user.id,
-        universe=data.universe.strip(),
-        tome=data.tome.strip(),
-        similarity=data.similarity,
-        confidence=data.confidence,
-    )
-    session.add(scan)
+def add_history(data: HistoryCreate, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    entry = History(user_id=user.id, **data.model_dump())
+    session.add(entry)
     session.commit()
-    session.refresh(scan)
-    return scan.to_dict()
+    session.refresh(entry)
+    return entry.to_dict()
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 def clear_history(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    session.exec(delete(Scan).where(Scan.user_id == user.id))
+    session.exec(delete(History).where(History.user_id == user.id))
     session.commit()

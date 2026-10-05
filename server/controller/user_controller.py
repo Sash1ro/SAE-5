@@ -1,13 +1,12 @@
 import re
 from datetime import datetime, timedelta
-
+from uuid import UUID
 import bcrypt
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlmodel import Session, select
-
 from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_HOURS
 from database import get_session
 from model.user import User
@@ -21,7 +20,7 @@ class Credentials(BaseModel):
     email: str
     password: str
 
-def create_token(user_id: int):
+def create_token(user_id: UUID):
     payload = {
         "sub": str(user_id),
         "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS),
@@ -34,7 +33,7 @@ def get_current_user(
 ):
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user = session.get(User, int(payload["sub"]))
+        user = session.get(User, UUID(payload["sub"]))
     except (jwt.PyJWTError, KeyError, ValueError):
         user = None
 
@@ -45,7 +44,7 @@ def get_current_user(
         )
     return user
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(data: Credentials, session: Session = Depends(get_session)):
     email = data.email.strip().lower()
 
