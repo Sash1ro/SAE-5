@@ -21,7 +21,7 @@ CREATE TABLE history (
     ia_confidence FLOAT NOT NULL CHECK (ia_confidence >= 0 AND ia_confidence <= 1),
     ia_similarity FLOAT NOT NULL CHECK (ia_similarity >= 0 AND ia_similarity <= 1), 
     history_result TEXT NOT NULL CHECK (history_result IN ('failed', 'success')), 
-    history_type TEXT NOT NULL CHECK (result IN ('detection', 'contribution')), 
+    history_type TEXT NOT NULL CHECK (history_type IN ('detection', 'contribution')), 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now() 
 );
 
