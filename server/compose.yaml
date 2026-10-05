@@ -3,21 +3,27 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: manga_api
+    container_name: manganitor_api
     restart: unless-stopped
+    env_file:
+      - .env 
     ports:
       - "8000:8000"
     volumes:
       - ./storage:/app/storage
       - torch_cache:/root/.cache/torch
     command: uvicorn main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - db    
 
   scheduler:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: manga_scheduler
+    container_name: manganitor_scheduler
     restart: unless-stopped
+    env_file:
+      - .env  
     environment:
       - TZ=Europe/Paris
     volumes:
@@ -26,6 +32,24 @@ services:
     command: python docker/cron_runner.py
     depends_on:
       - api
+      - db    
+
+  db:
+    image: postgres:16-alpine
+    container_name: manganitor_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432" 
+    volumes:
+      - pg_data:/var/lib/postgresql/data 
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
 
 volumes:
   torch_cache:
+  pg_data: 
