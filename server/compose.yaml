@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env 
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
     ports:
       - "8000:8000"
     volumes:
