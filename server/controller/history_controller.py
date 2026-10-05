@@ -34,7 +34,7 @@ def get_history_entry(history_id: UUID, user: User = Depends(get_current_user), 
     if entry is None or entry.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Historique introuvable.",
+            detail="History not found.",
         )
     return entry.to_dict()
 

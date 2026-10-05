@@ -14,8 +14,6 @@ from model.user import User
 router = APIRouter(prefix="/api/user", tags=["user"])
 bearer = HTTPBearer()
 
-EMAIL_REGEX = re.compile(r"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$", re.IGNORECASE)
-
 class Credentials(BaseModel):
     email: str
     password: str
@@ -40,28 +38,17 @@ def get_current_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalide ou expiré.",
+            detail="Invalid or expired token",
         )
     return user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(data: Credentials, session: Session = Depends(get_session)):
     email = data.email.strip().lower()
-
-    if not EMAIL_REGEX.match(email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email invalide.",
-        )
-    if len(data.password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le mot de passe doit faire au moins 8 caractères.",
-        )
     if session.exec(select(User).where(User.email == email)).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Un compte existe déjà avec cet email.",
+            detail="An account with that email already exist",
         )
 
     password_hash = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
@@ -80,7 +67,7 @@ def login(data: Credentials, session: Session = Depends(get_session)):
     if user is None or not bcrypt.checkpw(data.password.encode(), user.password_hash.encode()):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou mot de passe incorrect.",
+            detail="Incorrect email or password",
         )
 
     return {"user": user.to_dict(), "token": create_token(user.id)}

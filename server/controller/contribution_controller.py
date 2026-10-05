@@ -25,7 +25,7 @@ async def submit_contribution(
     if not universe.strip() or not tome.strip().isdigit() or int(tome) <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Universe et tome (nombre positif) sont obligatoires.",
+            detail="Universe and volume are required.",
         )
 
     ext = Path(image.filename or "").suffix.lower()

@@ -8,16 +8,17 @@ type Props = {
   fun?: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   alt?: boolean;
+  small?: boolean;
   danger?: boolean;
 };
 
-export default function Button({ label, fun, icon, alt, danger }: Props) {
+export default function Button({ label, fun, icon, alt, small, danger }: Props) {
   const loading = useLoadingStore((state) => state.isLoading);
   const currentBgColor = alt ? colors.second : danger ? colors.error : colors.main;
   const currentTextColor = alt ? colors.onMain : colors.onMain;
 
   return (
-    <View style={[styles.buttonContainer, { backgroundColor: currentBgColor }]}>
+    <View style={[styles.buttonContainer, { backgroundColor: currentBgColor, width: small ? "auto" : "100%", height: small ? "auto" : 48 }]}>
       <Pressable
         disabled={loading}
         style={styles.button}

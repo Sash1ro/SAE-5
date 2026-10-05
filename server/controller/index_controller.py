@@ -13,7 +13,7 @@ def verify_batch_key(x_batch_key: str = Header(default="")):
     if not BATCH_API_KEY or not secrets.compare_digest(x_batch_key.encode(), BATCH_API_KEY.encode()):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Clé batch invalide.",
+            detail="Invalid batch key",
         )
 
 @router.get("/index/version")
@@ -28,7 +28,7 @@ async def download_index():
     if not INDEX_FILE.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun index disponible.",
+            detail="No index available",
         )
     return FileResponse(
         path=str(INDEX_FILE),

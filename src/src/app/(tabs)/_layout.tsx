@@ -2,9 +2,20 @@ import { Tabs } from "expo-router";
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/stores/stylesStore";
+import Button from "@/components/button";
+import { deleteToken } from "@/services/userService";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { View } from "react-native";
 
 export default function TabLayout() {
   const APP_NAME = "Manganitor";
+  const setIsLoggedIn = useAuthStore((state) => state.setIsLoggedIn);
+
+  const logout = async () => {
+    await deleteToken()
+    setIsLoggedIn(false)
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -25,6 +36,11 @@ export default function TabLayout() {
           shadowOpacity: 0,
         },
         headerTintColor: colors.onBg,
+        headerRight: () => (
+          <View style={{ marginRight: 15, width: 120 }}>
+            <Button label="Logout" fun={logout} small={true} alt={true} icon="log-out-outline"/>
+          </View>
+        )
       }}
     >
       <Tabs.Screen

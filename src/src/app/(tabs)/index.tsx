@@ -15,7 +15,6 @@ import { useDetectionStore } from "@/stores/useDetectionStore";
 import { classifyManga } from "@/services/mangaClassifier/classify";
 import { colors } from "@/stores/stylesStore";
 import { DEF_CONFIDENCE, DEF_SIMILARITY } from "@/services/mangaClassifier/classifyCore";
-import { formatToStub } from "@/utils/utils";
 
 export default function Index() {
   const router = useRouter();

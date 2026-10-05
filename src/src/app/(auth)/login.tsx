@@ -6,15 +6,19 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
-import { login } from '@/services/userService';
+import { login, register, saveToken } from '@/services/userService';
+import axios from 'axios';
+import { useLoadingStore } from '@/stores/useLoadingStore';
 
 export default function LoginScreen() {
-  const loginState = useAuthStore((state) => state.login);
+  const setIsLoggedIn = useAuthStore((state) => state.setIsLoggedIn);
 
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [confPwd, setConfPwd] = useState('');
   const [error, setError] = useState('');
+  const showLoading = useLoadingStore((state) => state.showLoading);
+  const hideLoading = useLoadingStore((state) => state.hideLoading);
 
   const { signup } = useLocalSearchParams();
   const accountCreation = signup === "1";
@@ -25,43 +29,70 @@ export default function LoginScreen() {
   const isLandscape = width > height;
   const isSmallHeight = height < 700;
 
-  const handleLogin = async () => {
+  const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+  const handleSignIn = async (cleanEmail: string) => {
+    showLoading("Logging in...")
+    try {
+      const res = await login(cleanEmail, pwd);
+
+      if (res?.data?.token) {
+        await saveToken(res.data.token);
+      }
+
+      setIsLoggedIn(true);
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 401) {
+        setError("Incorrect email or password.");
+      } else {
+        setError("Server error, please retry later.");
+      }
+    } finally {
+      hideLoading()
+    }
+  };
+
+  const handleRegister = async (cleanEmail: string) => {
+    if (!EMAIL_REGEX.test(cleanEmail)) return setError("Please enter a valid email.");
+    if (pwd.length < 8) return setError("Password must be at least 8 characters.");
+    if (confPwd === "") return setError("Please confirm your password.");
+    if (pwd !== confPwd) return setError("Passwords do not match.");
+
+    try {
+      showLoading("Creating account...")
+      const res = await register(cleanEmail, pwd);
+
+      if (res?.data?.token) {
+        await saveToken(res.data.token);
+      }
+
+      setIsLoggedIn(true);
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 409) {
+        setError("An account with this email already exists.");
+      } else {
+        setError("Server error, please retry later.");
+      }
+    } finally {
+      hideLoading()
+    }
+  };
+
+  const handleSubmit = async () => {
     setError('');
 
-    if (email.trim() === "") {
-      return setError("Please enter your email.");
-    }
-    if (pwd === "") {
-      return setError("Please enter a password.");
-    }
+    const cleanEmail = email.trim();
+
+    if (cleanEmail === "") return setError("Please enter your email.");
+    if (pwd === "") return setError("Please enter a password.");
 
     if (accountCreation) {
-      const validEmail: RegExp = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-
-      if(!validEmail.test(email)) {
-        return setError("Please enter a valid email.")
-      }
-
-      if (confPwd === "") {
-        return setError("Please confirm your password.");
-      }
-      if (pwd !== confPwd) {
-        return setError("Passwords do not match.");
-      }
-      if(pwd.length < 8) {
-        return setError("Password must be at least 8 characters.")
-      }
+      await handleRegister(cleanEmail);
     } else {
-      try {
-        await login(email.trim(), pwd)
-      } catch (e) {
-        return setError("Email or password incorrect")
-      }
-      
+      await handleSignIn(cleanEmail);
     }
+  };
 
-    loginState();
-  }
 
   const dynamicStyles = getDynamicStyles({ isTablet, isLandscape, isSmallHeight });
 
@@ -117,7 +148,7 @@ export default function LoginScreen() {
         <ButtonGroup style={styles.buttons}>
           <Button
             label={accountCreation ? 'Create' : 'Login'}
-            fun={handleLogin}
+            fun={handleSubmit}
             icon={accountCreation ? 'person-add' : 'person'}
           />
           <Button
