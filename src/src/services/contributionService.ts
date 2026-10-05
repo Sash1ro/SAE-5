@@ -1,12 +1,11 @@
 import { Platform } from "react-native";
+import { SERVER_URL } from "@/stores/configStore";
 
 export interface ContributionPayload {
   universe: string;
   tome: string;
-  imageUri: string;
+  image: string;
 }
-
-const API_BASE_URL = "http://localhost:8000";
 
 export async function uploadMangaContribution(
   payload: ContributionPayload,
@@ -16,18 +15,18 @@ export async function uploadMangaContribution(
   formData.append("tome", payload.tome.trim());
 
   if (Platform.OS === "web") {
-    const res = await fetch(payload.imageUri);
+    const res = await fetch(payload.image);
     const blob = await res.blob();
     formData.append("image", blob, "cover.jpg");
   } else {
     formData.append("image", {
-      uri: payload.imageUri,
+      uri: payload.image,
       name: "cover.jpg",
       type: "image/jpeg",
     } as any);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/contributions`, {
+  const response = await fetch(`${SERVER_URL}/api/contributions`, {
     method: "POST",
     body: formData,
     headers: {

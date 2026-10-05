@@ -6,9 +6,10 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { login } from '@/services/userService';
 
 export default function LoginScreen() {
-  const login = useAuthStore((state) => state.login);
+  const loginState = useAuthStore((state) => state.login);
 
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
@@ -24,7 +25,7 @@ export default function LoginScreen() {
   const isLandscape = width > height;
   const isSmallHeight = height < 700;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError('');
 
     if (email.trim() === "") {
@@ -50,9 +51,16 @@ export default function LoginScreen() {
       if(pwd.length < 8) {
         return setError("Password must be at least 8 characters.")
       }
+    } else {
+      try {
+        await login(email.trim(), pwd)
+      } catch (e) {
+        return setError("Email or password incorrect")
+      }
+      
     }
 
-    login();
+    loginState();
   }
 
   const dynamicStyles = getDynamicStyles({ isTablet, isLandscape, isSmallHeight });

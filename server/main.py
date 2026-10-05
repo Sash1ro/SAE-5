@@ -7,7 +7,7 @@ from config import PENDING_DIR, PUBLIC_DIR, VERSION_FILE, SERVER_HOST, SERVER_PO
 from database import init_db
 from controller import user_controller, history_controller, contribution_controller, index_controller
 
-app = FastAPI(title="Manga Recognition API")
+app = FastAPI(title="Manganitor")
 
 app.add_middleware(
     CORSMiddleware,
