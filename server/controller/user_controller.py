@@ -1,12 +1,13 @@
-import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
+
 import bcrypt
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlmodel import Session, select
+
 from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_HOURS
 from database import get_session
 from model.user import User
@@ -15,13 +16,21 @@ router = APIRouter(prefix="/api/user", tags=["user"])
 bearer = HTTPBearer()
 
 class Credentials(BaseModel):
-    email: str
+    email: str 
     password: str
+
+class UserPublic(BaseModel):
+    id: UUID
+    email: str
+
+class AuthResponse(BaseModel):
+    user: UserPublic
+    token: str
 
 def create_token(user_id: UUID):
     payload = {
         "sub": str(user_id),
-        "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -42,24 +51,25 @@ def get_current_user(
         )
     return user
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=AuthResponse)
 def register(data: Credentials, session: Session = Depends(get_session)):
     email = data.email.strip().lower()
     if session.exec(select(User).where(User.email == email)).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An account with that email already exist",
+            detail="An account with that email already exists",
         )
 
     password_hash = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     user = User(email=email, password_hash=password_hash)
+    
     session.add(user)
     session.commit()
     session.refresh(user)
 
-    return {"user": user.to_dict(), "token": create_token(user.id)}
+    return {"user": user, "token": create_token(user.id)}
 
-@router.post("/login")
+@router.post("/login", response_model=AuthResponse)
 def login(data: Credentials, session: Session = Depends(get_session)):
     email = data.email.strip().lower()
     user = session.exec(select(User).where(User.email == email)).first()
@@ -70,8 +80,8 @@ def login(data: Credentials, session: Session = Depends(get_session)):
             detail="Incorrect email or password",
         )
 
-    return {"user": user.to_dict(), "token": create_token(user.id)}
+    return {"user": user, "token": create_token(user.id)}
 
-@router.get("/me")
+@router.get("/me", response_model=UserPublic)
 def me(user: User = Depends(get_current_user)):
-    return user.to_dict()
+    return user
