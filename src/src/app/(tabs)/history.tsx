@@ -3,6 +3,7 @@ import { getAllHisotry, History } from '@/services/historyService';
 import { colors } from '@/stores/stylesStore';
 import { useLoadingStore } from '@/stores/useLoadingStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 

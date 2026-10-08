@@ -2,7 +2,6 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 import { ImagePickerAsset } from "expo-image-picker";
 import { useRouter } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
 import ButtonGroup from "@/components/buttonGroup";
@@ -41,6 +40,7 @@ export default function Index() {
       }
     } catch (error) {
       console.log(error);
+      showError("Error while uploading image, please try again.");
     } finally {
       hideLoading();
     }
@@ -55,6 +55,7 @@ export default function Index() {
       }
     } catch (error) {
       console.log(error);
+      showError("Error while uploading image, please try again.");
     } finally {
       hideLoading();
     }
@@ -72,7 +73,7 @@ export default function Index() {
       const result = await classifyManga(imageAsset, DEF_CONFIDENCE, DEF_SIMILARITY);
       if (result) {
         setCurrentDetection(result);
-        addToHistory(result.universe, Number(result.tome), imageAsset.uri, result.confidence, result.similarity, RESULT.SUCCESS, TYPE.DETECTION)
+        await addToHistory(result.universe, Number(result.tome), imageAsset.uri, result.confidence, result.similarity, RESULT.SUCCESS, TYPE.DETECTION)
         
         router.push({
           pathname: "/details",
@@ -84,7 +85,7 @@ export default function Index() {
       }
     } catch (error: any) {
       console.error(error);
-      showError("Error while detecting");
+      showError("Error while detecting your manga, please try again.");
     } finally {
       hideLoading();
     }

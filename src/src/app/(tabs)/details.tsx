@@ -1,13 +1,12 @@
 import { colors } from "@/stores/stylesStore";
-import { useDetectionStore } from "@/stores/useDetectionStore";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
 import { useState, useEffect } from "react";
 import { useLoadingStore } from "@/stores/useLoadingStore";
 import ScreenScrollView from "@/components/screenscrollView";
-import { useGlobalSearchParams } from "expo-router";
+import { router, Stack, useGlobalSearchParams } from "expo-router";
 
 export default function DetailsPage() {
   const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
@@ -51,6 +50,21 @@ export default function DetailsPage() {
       backgroundColor={colors.bg2}
       contentContainerStyle={styles.scrollContent}
     >
+      <Stack.Screen
+        options={{
+          headerTitleAlign: "left",
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.back()} 
+              style={styles.backButton}
+              hitSlop={15} 
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.placeHolder} />
+            </Pressable>
+          ),
+        }}
+      />
+
       {(!title || !volume ) && (
         <View style={styles.emptyState}>
           <Ionicons name="albums-outline" size={48} color={colors.placeHolder} />
@@ -121,7 +135,7 @@ export default function DetailsPage() {
               {mangaDetails.resume || "No synopsis available."}
             </Text>
           </View>
-          
+
         </View>
       )}
     </ScreenScrollView>
@@ -286,5 +300,9 @@ const styles = StyleSheet.create({
     color: colors.placeHolder,
     fontSize: 13,
     flex: 1,
+  },
+   backButton: {
+    marginRight: 20,
+    marginLeft:  18, 
   },
 });
