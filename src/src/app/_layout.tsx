@@ -4,7 +4,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { useLoadingStore } from "../stores/useLoadingStore";
 import GlobalLoader from "@/components/globalLoader";
 import { syncIndexWithServer } from "@/services/indexSync/indexManager";
-import { deleteToken, me } from "@/services/userService";
+import { me } from "@/services/userService";
 import Button from "@/components/button";
 
 let intendedRoute: string | null = null;

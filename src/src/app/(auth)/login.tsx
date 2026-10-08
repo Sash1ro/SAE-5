@@ -6,7 +6,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
-import { login, register, saveToken } from '@/services/userService';
+import { login, register } from '@/services/userService';
+import { saveToken } from '@/services/userTokenService';
 import axios from 'axios';
 import { useLoadingStore } from '@/stores/useLoadingStore';
 
