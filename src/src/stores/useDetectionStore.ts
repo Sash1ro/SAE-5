@@ -16,22 +16,10 @@ export interface DetectionResult {
 
 interface DetectionState {
   currentDetection: DetectionResult | null;
-  history: DetectionResult[];
   setCurrentDetection: (detection: DetectionResult | null) => void;
-  addToHistory: (detection: DetectionResult) => void;
-  clearHistory: () => void;
 }
 
 export const useDetectionStore = create<DetectionState>((set) => ({
   currentDetection: null,
-  history: [],
-
   setCurrentDetection: (detection) => set({ currentDetection: detection }),
-
-  addToHistory: (detection) =>
-    set((state) => ({
-      history: [detection, ...state.history],
-    })),
-
-  clearHistory: () => set({ history: [] }),
 }));

@@ -15,8 +15,9 @@ import ScreenScrollView from "@/components/screenscrollView";
 import { pickImage } from "@/utils/pickImage";
 import { takePhoto } from "@/utils/takePhoto";
 import { useLoadingStore } from "@/stores/useLoadingStore";
-import { uploadMangaContribution } from "@/services/contributionService";
+import { uploadToContribute } from "@/services/contributionService";
 import { colors } from "@/stores/stylesStore";
+import { useMessageStore } from "@/stores/useMessageStore";
 
 export default function Contribute() {
   const [imageAsset, setImageAsset] = useState<ImagePickerAsset | null>(null);
@@ -25,6 +26,8 @@ export default function Contribute() {
 
   const showLoading = useLoadingStore((state) => state.showLoading);
   const hideLoading = useLoadingStore((state) => state.hideLoading);
+  const showError = useMessageStore((state) => state.showError);
+  const showMessage = useMessageStore((state) => state.showMessage);
 
   const isMobile = Platform.OS === "ios" || Platform.OS === "android";
   const imageLoaded = Boolean(imageAsset?.uri);
@@ -67,47 +70,31 @@ export default function Contribute() {
 
   const handleSubmit = async () => {
     if (!imageAsset?.uri) {
-      Alert.alert(
-        "Image required",
-        "Please select a cover photo.",
-      );
+      showError("Image required", "Invalid field")
       return;
     }
 
     if (!universe.trim()) {
-      Alert.alert(
-        "Missing fields",
-        "Please fill in the series / universe name.",
-      );
+      showError("Universe required", "Invalid field")
       return;
     }
 
     if (!tome.trim() || isNaN(Number(tome))) {
-      Alert.alert(
-        "Invalid field",
-        "Please enter a valid volume number.",
-      );
+      showError("Volume required", "Invalid field")
       return;
     }
 
     showLoading("Submitting contribution...");
     try {
-      await uploadMangaContribution({
+      const resp = await uploadToContribute(
         universe,
-        tome,
-        imageUri: imageAsset.uri,
-      });
-
-      Alert.alert(
-        "Success",
-        "Your contribution has been submitted. It will be incorporated during the next training session.",
+        Number(tome),
+        imageAsset.uri,
       );
+      showMessage("Your contribution has been submitted.", "Success")
       handleResetForm();
-    } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "An error occurred while submitting.",
-      );
+    } catch (error) {
+      showError("An error occurred while submitting.")
     } finally {
       hideLoading();
     }

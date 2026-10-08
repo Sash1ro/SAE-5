@@ -121,32 +121,7 @@ export default function DetailsPage() {
               {mangaDetails.resume || "No synopsis available."}
             </Text>
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.chaptersBlock}>
-            <Text style={styles.sectionLabel}>Chapters</Text>
-            
-            {mangaDetails.chapters && mangaDetails.chapters.length > 0 ? (
-              <View style={styles.chaptersList}>
-                {mangaDetails.chapters.map((chapter) => (
-                  <View key={chapter.chapterId} style={styles.chapterItem}>
-                    <Ionicons name="document-text-outline" size={20} color={colors.main} />
-                    <Text style={styles.chapterTitle} numberOfLines={2}>
-                      {`${chapter.chapter} - ${chapter.title}`}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={styles.chaptersPlaceholder}>
-                <Ionicons name="information-circle-outline" size={20} color={colors.placeHolder} />
-                <Text style={styles.chaptersPlaceholderText}>
-                  No chapter founds
-                </Text>
-              </View>
-            )}
-          </View>
+          
         </View>
       )}
     </ScreenScrollView>
@@ -170,14 +145,6 @@ const styles = StyleSheet.create({
     color: colors.altText,
     fontSize: 15,
     textAlign: "center",
-  },
-  loadingState: {
-    alignItems: "center",
-    gap: 12,
-  },
-  loadingText: {
-    color: colors.altText,
-    fontSize: 14,
   },
   card: {
     width: "90%",

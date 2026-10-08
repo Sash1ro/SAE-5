@@ -3,9 +3,9 @@ import { Stack, useRouter, useSegments, usePathname, useGlobalSearchParams } fro
 import { useAuthStore } from "../stores/useAuthStore";
 import { useLoadingStore } from "../stores/useLoadingStore";
 import GlobalLoader from "@/components/globalLoader";
+import GlobalError from "@/components/globalMessage";
 import { syncIndexWithServer } from "@/services/indexSync/indexManager";
 import { me } from "@/services/userService";
-import Button from "@/components/button";
 
 let intendedRoute: string | null = null;
 
@@ -81,6 +81,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/login" />
       </Stack>
       <GlobalLoader />
+      <GlobalError />
     </>
   );
 }

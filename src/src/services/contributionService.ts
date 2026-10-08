@@ -1,43 +1,25 @@
-import { Platform } from "react-native";
-import { SERVER_URL } from "@/stores/configStore";
+import { processImageToForm } from "@/utils/processImage";
+import { apiClient } from "./apiService";
+import { AxiosResponse } from "axios";
 
-export interface ContributionPayload {
-  universe: string;
-  tome: string;
-  image: string;
+export interface ContributionResp {
+  id: string
+  status: string
 }
 
-export async function uploadMangaContribution(
-  payload: ContributionPayload,
-): Promise<boolean> {
-  const formData = new FormData();
-  formData.append("universe", payload.universe.trim());
-  formData.append("tome", payload.tome.trim());
+const processToForm = async (universe: string, volume: number, imageUri: string) : Promise<FormData> => {
+  let formData = new FormData();
+  formData.append("universe_name", universe.trim());
+  formData.append("universe_volume", volume.toString());
+  return await processImageToForm(formData, imageUri)
+}
 
-  if (Platform.OS === "web") {
-    const res = await fetch(payload.image);
-    const blob = await res.blob();
-    formData.append("image", blob, "cover.jpg");
-  } else {
-    formData.append("image", {
-      uri: payload.image,
-      name: "cover.jpg",
-      type: "image/jpeg",
-    } as any);
-  }
+export const uploadToContribute = async (universe: string, volume: number, imageUri: string): Promise<AxiosResponse> =>  {
+  const formData = await processToForm(universe, volume, imageUri)
 
-  const response = await fetch(`${SERVER_URL}/api/contributions`, {
-    method: "POST",
-    body: formData,
+  return await apiClient.post<ContributionResp>("/contributions", formData, {
     headers: {
-      Accept: "application/json",
+      'Content-Type': 'multipart/form-data',
     },
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(errorBody || "Error while sending contributions.");
-  }
-
-  return true;
+  })
 }

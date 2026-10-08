@@ -7,7 +7,7 @@ let memoryIndex: IndexData | null = null;
 
 export async function syncIndexWithServer(): Promise<void> {
   try {
-    const res = await fetch(`${SERVER_URL}/api/index/version`);
+    const res = await fetch(`${SERVER_URL}/index/version`);
     if (!res.ok) return;
 
     const { version: serverVersion } = await res.json();
@@ -18,7 +18,7 @@ export async function syncIndexWithServer(): Promise<void> {
     if (serverVersion > localVersion) {
       const newIndex = await updateLocalIndex(
         serverVersion,
-        `${SERVER_URL}/api/index/download`
+        `${SERVER_URL}/index/download`
       );
       
       if (newIndex) {

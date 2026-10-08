@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { cleanResume } from '@/utils/cleanResume';
 import { getCache, setCache } from '@/services/cacheService';
 import { formatToStub } from '@/utils/utils';
