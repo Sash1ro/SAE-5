@@ -1,5 +1,5 @@
 import { getToken } from "@/services/userTokenService";
-import { SERVER_URL } from "@/stores/configStore";
+import { SERVER_URL } from "@/utils/utils";
 import axios from "axios";
 
 export const apiClient = axios.create({

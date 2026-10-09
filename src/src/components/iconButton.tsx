@@ -1,6 +1,5 @@
-import { StyleSheet, View, Pressable, Text, Alert } from 'react-native';
-import { colors } from "@/stores/stylesStore"
-import { useLoadingStore } from '@/stores/useLoadingStore';
+import { StyleSheet, Pressable} from 'react-native';
+import { colors } from "@/theme/colors"
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Props = {
@@ -10,8 +9,6 @@ type Props = {
 };
 
 export default function IconButton({ fun, icon, color }: Props) {
-    const loading = useLoadingStore((state) => state.isLoading);
-
     return (
         <Pressable
             onPress={() => fun ? fun() : alert("Pressed")}

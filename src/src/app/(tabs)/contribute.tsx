@@ -1,106 +1,23 @@
-import { useState } from "react";
 import {
-  Alert,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { ImagePickerAsset } from "expo-image-picker";
+
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
 import ScreenScrollView from "@/components/screenscrollView";
+import { colors } from "@/theme/colors";
+import { useImageSelection } from "@/hooks/useImageSelection";
+import { useContributionSubmitting } from "@/hooks/useContributionSubmitting";
 
-import { pickImage } from "@/utils/pickImage";
-import { takePhoto } from "@/utils/takePhoto";
-import { useLoadingStore } from "@/stores/useLoadingStore";
-import { uploadToContribute } from "@/services/contributionService";
-import { colors } from "@/stores/stylesStore";
-import { useMessageStore } from "@/stores/useMessageStore";
+const isMobile = Platform.OS !== "web"
 
 export default function Contribute() {
-  const [imageAsset, setImageAsset] = useState<ImagePickerAsset | null>(null);
-  const [universe, setUniverse] = useState("");
-  const [tome, setTome] = useState("");
-
-  const showLoading = useLoadingStore((state) => state.showLoading);
-  const hideLoading = useLoadingStore((state) => state.hideLoading);
-  const showError = useMessageStore((state) => state.showError);
-  const showMessage = useMessageStore((state) => state.showMessage);
-
-  const isMobile = Platform.OS === "ios" || Platform.OS === "android";
-  const imageLoaded = Boolean(imageAsset?.uri);
-
-  const handlePickImage = async () => {
-    showLoading("Loading image...");
-    try {
-      const asset = await pickImage();
-      if (asset) {
-        setImageAsset(asset);
-      }
-    } catch (error) {
-      console.log(error);
-      showError("Error while loading image.")
-    } finally {
-      hideLoading();
-    }
-  };
-
-  const handleTakePhoto = async () => {
-    showLoading("Loading camera...");
-    try {
-      const asset = await takePhoto();
-      if (asset) {
-        setImageAsset(asset);
-      }
-    } catch (error) {
-      console.log(error);
-      showError("Error while loading image.")
-    } finally {
-      hideLoading();
-    }
-  };
-
-  const handleRemoveImage = () => setImageAsset(null);
-
-  const handleResetForm = () => {
-    setImageAsset(null);
-    setUniverse("");
-    setTome("");
-  };
-
-  const handleSubmit = async () => {
-    if (!imageAsset?.uri) {
-      showError("Image required", "Invalid field")
-      return;
-    }
-
-    if (!universe.trim()) {
-      showError("Universe required", "Invalid field")
-      return;
-    }
-
-    if (!tome.trim() || isNaN(Number(tome))) {
-      showError("Volume required", "Invalid field")
-      return;
-    }
-
-    showLoading("Submitting contribution...");
-    try {
-      const resp = await uploadToContribute(
-        universe,
-        Number(tome),
-        imageAsset.uri,
-      );
-      showMessage("Your contribution has been submitted.", "Success")
-      handleResetForm();
-    } catch (error) {
-      showError("An error occurred while submitting.")
-    } finally {
-      hideLoading();
-    }
-  };
+  const { asset, hasImage, pickFromLibrary, takePicture, clear } = useImageSelection();
+  const { submit, setTitle, setVolume, title, volume } = useContributionSubmitting();
 
   return (
     <ScreenScrollView
@@ -109,20 +26,20 @@ export default function Contribute() {
       contentContainerStyle={styles.scrollContent}
     >
       <View style={styles.viewerWrapper}>
-        <ImageViewer imgSource={imageAsset?.uri ?? null} />
+        <ImageViewer imgSource={asset?.uri ?? null} />
       </View>
 
       <View style={styles.buttonsRow}>
-        {!imageLoaded && (
-          <Button label="Select Image" fun={handlePickImage} icon="images" />
+        {!hasImage && (
+          <Button label="Select Image" fun={pickFromLibrary} icon="images" />
         )}
-        {!imageLoaded && isMobile && (
-          <Button label="Take Photo" fun={handleTakePhoto} icon="aperture" />
+        {!hasImage && isMobile && (
+          <Button label="Take Photo" fun={takePicture} icon="aperture" />
         )}
-        {imageLoaded && (
+        {hasImage && (
           <Button
             label="Remove"
-            fun={handleRemoveImage}
+            fun={clear}
             icon="trash-bin"
             danger={true}
           />
@@ -133,8 +50,8 @@ export default function Contribute() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Title / Series</Text>
           <TextInput
-            value={universe}
-            onChangeText={setUniverse}
+            value={title}
+            onChangeText={setTitle}
             placeholder="Ex: Chainsaw Man, Naruto..."
             placeholderTextColor={colors.placeHolder}
             style={styles.input}
@@ -144,8 +61,8 @@ export default function Contribute() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Volume number</Text>
           <TextInput
-            value={tome}
-            onChangeText={setTome}
+            value={volume}
+            onChangeText={setVolume}
             placeholder="Ex: 1"
             placeholderTextColor={colors.placeHolder}
             keyboardType="numeric"
@@ -157,7 +74,7 @@ export default function Contribute() {
       <View style={styles.submitContainer}>
         <Button
           label="Submit the manga"
-          fun={handleSubmit}
+          fun={() => submit(asset, clear)}
           icon="cloud-upload"
         />
       </View>

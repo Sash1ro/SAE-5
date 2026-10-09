@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "@/stores/stylesStore";
+import { colors } from "@/theme/colors";
 
 type Props = {
     children: React.ReactNode;

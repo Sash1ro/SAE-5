@@ -7,28 +7,25 @@ export interface History {
     universe_name: string,
     universe_volume: number,
     image_64: string,
-    ia_confidence: number,
-    ia_similarity: number,
-    history_result: string,
     history_type: string,
     created_at?: string;
 }
 
 export enum RESULT {
-    SUCCESS="success",
-    FAILED="failed",
+    SUCCESS = "success",
+    FAILED = "failed",
 }
 
 export enum TYPE {
-    DETECTION="detection",
-    CONTRIBUTION="contribution",
+    DETECTION = "detection",
+    CONTRIBUTION = "contribution",
 }
 
-export const getHistory = async (id: string) : Promise<AxiosResponse> => {
+export const getHistory = async (id: string): Promise<AxiosResponse> => {
     return await apiClient.get<History>(`/user/history/${id}`)
 }
 
-export const getAllHisotry = async () : Promise<AxiosResponse> => {
+export const getAllHisotry = async (): Promise<AxiosResponse> => {
     return await apiClient.get<History[]>("/user/history")
 }
 
@@ -57,7 +54,7 @@ export const addToHistory = async (
     confidence: number,
     similarity: number,
     result: string,
-    type: string) : Promise<AxiosResponse> => {
+    type: string): Promise<AxiosResponse> => {
     const formData = await processToForm(name, volume, imageUri, confidence, similarity, result, type)
 
     return await apiClient.post("/user/history", formData, {
@@ -67,9 +64,9 @@ export const addToHistory = async (
     })
 }
 
-export const removeHistory = async (id: string) : Promise<AxiosResponse> => {
+export const removeHistory = async (id: string): Promise<AxiosResponse> => {
     return await apiClient.delete(`/user/history/${id}`)
 }
-export const clearHistory = async () : Promise<AxiosResponse> => {
+export const clearHistory = async (): Promise<AxiosResponse> => {
     return await apiClient.delete("/user/history")
 }

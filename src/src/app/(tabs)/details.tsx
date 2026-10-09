@@ -1,45 +1,15 @@
-import { colors } from "@/stores/stylesStore";
+import { colors } from "@/theme/colors";
 import { Text, View, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
-import { useState, useEffect } from "react";
-import { useLoadingStore } from "@/stores/useLoadingStore";
+import { useEffect } from "react";
 import ScreenScrollView from "@/components/screenscrollView";
-import { router, Stack, useGlobalSearchParams } from "expo-router";
-import { useMessageStore } from "@/stores/useMessageStore";
+import { router, Stack } from "expo-router";
+import { useMangaFetching } from "@/hooks/useMangaFetching";
 
 export default function DetailsPage() {
-  const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
-  const showLoading = useLoadingStore((state) => state.showLoading);
-  const hideLoading = useLoadingStore((state) => state.hideLoading);
-  const showError = useMessageStore((state) => state.showError);
-  const params = useGlobalSearchParams();
-  const title = Array.isArray(params.title) ? params.title[0] : params.title;
-  const volume = Array.isArray(params.volume) ? params.volume[0] : params.volume;
-
-  useEffect(() => {
-    if (!title || !volume) {
-      return;
-    }
-
-    const fetchDetails = async () => {
-      setMangaDetails(null);
-      showLoading("Loading details...");
-      try {
-        const tomeNumber = parseInt(volume, 10);
-        const data = await getCompleteVolumeData(title, tomeNumber);
-        if (data) setMangaDetails(data);
-      } catch (err) {
-        console.error(err);
-        showError("Error while fetching manga data.");
-      } finally {
-        hideLoading();
-      }
-    };
-
-    fetchDetails();
-  }, [title, volume]);
+  const {title, volume, fetch, mangaDetails} = useMangaFetching()
+  useEffect(() => {fetch()}, [title, volume]);
 
   return (
     <ScreenScrollView
@@ -68,7 +38,7 @@ export default function DetailsPage() {
         </View>
       )}
 
-      {params && mangaDetails && (
+      {mangaDetails && (
         <View style={styles.card}>
           <View style={styles.coverWrapper}>
             {mangaDetails.volumeCoverUrl ? (

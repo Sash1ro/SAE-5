@@ -1,7 +1,7 @@
 import staticIndexData from "../../../assets/models/index_mangas.json";
 import { IndexData } from "../mangaClassifier/classifyCore";
 import { getLocalVersion, updateLocalIndex, getCachedIndex } from "./indexStorage"; 
-import { SERVER_URL } from "@/stores/configStore";
+import { SERVER_URL } from "@/utils/utils";
 
 let memoryIndex: IndexData | null = null;
 

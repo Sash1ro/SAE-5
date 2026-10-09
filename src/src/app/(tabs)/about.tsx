@@ -1,12 +1,10 @@
 import { colors } from '@/stores/stylesStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { View, StyleSheet, ScrollView, Text, Linking, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
+import { openLink } from '@/utils/utils';
+
 
 export default function AboutScreen() {
-  const openLink = (url: string) => {
-    Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
-  };
-
   return (
     <ScrollView 
       style={styles.container} 

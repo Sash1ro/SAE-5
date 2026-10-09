@@ -1,7 +1,6 @@
 import { Tabs } from "expo-router";
-
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { colors } from "@/stores/stylesStore";
+import { colors } from "@/theme/colors";
 import Button from "@/components/button";
 import { deleteToken } from "@/services/userTokenService";
 import { useAuthStore } from "@/stores/useAuthStore";

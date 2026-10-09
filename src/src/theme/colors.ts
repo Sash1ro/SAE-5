@@ -30,13 +30,3 @@ const dark = {
 };
 
 export const colors = isDark ? dark : light
-
-export const container = {
-  container: {
-    flex: 1,
-    gap: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg2
-  } as const,
-}

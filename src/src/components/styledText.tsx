@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors } from "@/stores/stylesStore"
+import { colors } from "@/theme/colors"
 
 type Props = {
   content: string;
