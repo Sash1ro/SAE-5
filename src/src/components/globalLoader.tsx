@@ -1,6 +1,6 @@
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useLoadingStore } from '@/stores/useLoadingStore';
-import { colors } from '@/stores/stylesStore'; 
+import { colors } from '@/theme/colors'; 
 
 export default function GlobalLoader() {
   const { isLoading, message } = useLoadingStore();
@@ -9,7 +9,7 @@ export default function GlobalLoader() {
   return (
     <View style={styles.overlay}>
       <View style={styles.box}>
-        <ActivityIndicator size="large" color={colors.main || '#fff'} />
+        <ActivityIndicator size="large" color={colors.main} />
         {message ? <Text style={styles.text}>{message}</Text> : null}
       </View>
     </View>

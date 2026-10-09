@@ -1,25 +1,41 @@
-import Button from '@/components/button';
-import ButtonGroup from '@/components/buttonGroup';
-import ScreenScrollView from '@/components/screenscrollView';
-import { colors } from '@/stores/stylesStore';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Text, View, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
-import { login, register } from '@/services/userService';
-import { saveToken } from '@/services/userTokenService';
-import axios from 'axios';
-import { useLoadingStore } from '@/stores/useLoadingStore';
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
+import axios from "axios";
+
+import Button from "@/components/button";
+import ButtonGroup from "@/components/buttonGroup";
+import FormField from "@/components/formField";
+import ScreenScrollView from "@/components/screenscrollView";
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/tokens";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useLoadingStore } from "@/stores/useLoadingStore";
+import { login, register } from "@/services/userService";
+import { saveToken } from "@/services/userTokenService";
+
+const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+const SERVER_ERROR = "Server error, please retry later.";
+
+type AuthResponse = { data?: { token?: string } } | null | undefined;
+
+const validateRegistration = (email: string, pwd: string, confPwd: string): string | null => {
+  if (!EMAIL_REGEX.test(email)) return "Please enter a valid email.";
+  if (pwd.length < 8) return "Password must be at least 8 characters.";
+  if (confPwd === "") return "Please confirm your password.";
+  if (pwd !== confPwd) return "Passwords do not match.";
+  return null;
+};
 
 export default function LoginScreen() {
   const setIsLoggedIn = useAuthStore((state) => state.setIsLoggedIn);
-
-  const [email, setEmail] = useState('');
-  const [pwd, setPwd] = useState('');
-  const [confPwd, setConfPwd] = useState('');
-  const [error, setError] = useState('');
   const showLoading = useLoadingStore((state) => state.showLoading);
   const hideLoading = useLoadingStore((state) => state.hideLoading);
+
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [confPwd, setConfPwd] = useState("");
+  const [error, setError] = useState("");
 
   const { signup } = useLocalSearchParams();
   const accountCreation = signup === "1";
@@ -30,136 +46,117 @@ export default function LoginScreen() {
   const isLandscape = width > height;
   const isSmallHeight = height < 700;
 
-  const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+  const titleSize = isTablet ? 34 : isSmallHeight ? 22 : 28;
+  const sectionGap = isSmallHeight ? 24 : 40;
+  const formWidth = isLandscape && !isTablet ? "60%" : "85%";
+  const formMaxWidth = isTablet ? 420 : 350;
+  const inputFontSize = isTablet ? 17 : 16;
 
-  const handleSignIn = async (cleanEmail: string) => {
-    showLoading("Logging in...")
+  const authenticate = async (
+    loadingMessage: string,
+    request: () => Promise<AuthResponse>,
+    errorByStatus: Record<number, string> = {}
+  ) => {
+    showLoading(loadingMessage);
     try {
-      const res = await login(cleanEmail, pwd);
-
-      if (res?.data?.token) {
-        await saveToken(res.data.token);
-      }
-
+      const res = await request();
+      if (res?.data?.token) await saveToken(res.data.token);
       setIsLoggedIn(true);
     } catch (e) {
-      if (axios.isAxiosError(e) && e.response?.status === 401) {
-        setError("Incorrect email or password.");
-      } else {
-        setError("Server error, please retry later.");
-      }
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+      setError((status && errorByStatus[status]) || SERVER_ERROR);
     } finally {
-      hideLoading()
-    }
-  };
-
-  const handleRegister = async (cleanEmail: string) => {
-    if (!EMAIL_REGEX.test(cleanEmail)) return setError("Please enter a valid email.");
-    if (pwd.length < 8) return setError("Password must be at least 8 characters.");
-    if (confPwd === "") return setError("Please confirm your password.");
-    if (pwd !== confPwd) return setError("Passwords do not match.");
-
-    try {
-      showLoading("Creating account...")
-      const res = await register(cleanEmail, pwd);
-
-      if (res?.data?.token) {
-        await saveToken(res.data.token);
-      }
-
-      setIsLoggedIn(true);
-    } catch (e) {
-      if (axios.isAxiosError(e) && e.response?.status === 409) {
-        setError("An account with this email already exists.");
-      } else {
-        setError("Server error, please retry later.");
-      }
-    } finally {
-      hideLoading()
+      hideLoading();
     }
   };
 
   const handleSubmit = async () => {
-    setError('');
+    setError("");
 
     const cleanEmail = email.trim();
-
     if (cleanEmail === "") return setError("Please enter your email.");
     if (pwd === "") return setError("Please enter a password.");
 
-    if (accountCreation) {
-      await handleRegister(cleanEmail);
-    } else {
-      await handleSignIn(cleanEmail);
+    if (!accountCreation) {
+      return authenticate("Logging in...", () => login(cleanEmail, pwd), {
+        401: "Incorrect email or password.",
+      });
     }
+
+    const validationError = validateRegistration(cleanEmail, pwd, confPwd);
+    if (validationError) return setError(validationError);
+
+    return authenticate("Creating account...", () => register(cleanEmail, pwd), {
+      409: "An account with this email already exists.",
+    });
   };
 
+  const toggleMode = () => {
+    setError("");
+    router.setParams({ signup: accountCreation ? "" : "1" });
+  };
 
-  const dynamicStyles = getDynamicStyles({ isTablet, isLandscape, isSmallHeight });
+  const inputStyle = { fontSize: inputFontSize };
 
   return (
     <ScreenScrollView
       withKeyboardAvoiding
-      contentContainerStyle={styles.scrollContent}
       minTopPadding={isSmallHeight ? 24 : 40}
+      backgroundColor={colors.bg2}
+      contentContainerStyle={{ justifyContent: "center", gap: sectionGap }}
     >
-      <Text style={[styles.title, dynamicStyles.title]}>
+      <Text style={[styles.title, { fontSize: titleSize }]}>
         Welcome {!accountCreation ? "Back " : ""}to Manganitor
       </Text>
 
-      <View style={[styles.formContainer, dynamicStyles.formContainer]}>
-        {error !== "" ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
+      <View style={[styles.form, { width: formWidth, maxWidth: formMaxWidth }]}>
+        {error !== "" ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <TextInput
-          style={[styles.input, dynamicStyles.input]}
-          placeholder='mail@domain.com'
-          placeholderTextColor={colors.placeHolder}
+        <FormField
+          style={inputStyle}
+          placeholder="mail@domain.com"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
+          label="Email"
           onChangeText={setEmail}
         />
 
-        <TextInput
-          style={[styles.input, dynamicStyles.input]}
-          placeholder='strong password'
-          placeholderTextColor={colors.placeHolder}
-          textContentType='password'
+        <FormField
+          style={inputStyle}
+          placeholder="strong password"
+          textContentType="password"
           autoCapitalize="none"
           secureTextEntry
           value={pwd}
+          label="Password"
           onChangeText={setPwd}
         />
 
         {accountCreation && (
-          <TextInput
-            style={[styles.input, dynamicStyles.input]}
-            placeholder='repeat password'
-            textContentType='password'
+          <FormField
+            style={inputStyle}
+            placeholder="repeat password"
+            textContentType="password"
             autoCapitalize="none"
-            placeholderTextColor={colors.placeHolder}
             secureTextEntry
             value={confPwd}
+            label="Password confirmation"
             onChangeText={setConfPwd}
           />
         )}
 
         <ButtonGroup style={styles.buttons}>
           <Button
-            label={accountCreation ? 'Create' : 'Login'}
+            label={accountCreation ? "Create" : "Login"}
             fun={handleSubmit}
-            icon={accountCreation ? 'person-add' : 'person'}
+            icon={accountCreation ? "person-add" : "person"}
           />
           <Button
-            alt={true}
-            label={accountCreation ? 'Back' : 'Sign up'}
-            fun={() => {
-              setError('');
-              router.setParams({ signup: accountCreation ? "" : "1" });
-            }}
-            icon={accountCreation ? 'arrow-back' : 'person-add'}
+            alt
+            label={accountCreation ? "Back" : "Sign up"}
+            fun={toggleMode}
+            icon={accountCreation ? "arrow-back" : "person-add"}
           />
         </ButtonGroup>
       </View>
@@ -167,65 +164,21 @@ export default function LoginScreen() {
   );
 }
 
-function getDynamicStyles({
-  isTablet,
-  isLandscape,
-  isSmallHeight,
-}: {
-  isTablet: boolean;
-  isLandscape: boolean;
-  isSmallHeight: boolean;
-}) {
-  return {
-    title: {
-      fontSize: isTablet ? 34 : isSmallHeight ? 22 : 28,
-      marginBottom: isSmallHeight ? 24 : 40,
-    },
-    formContainer: {
-      maxWidth: isTablet ? 420 : 350,
-      width: isLandscape && !isTablet ? '60%' : '85%',
-    },
-    input: {
-      padding: isSmallHeight ? 12 : 16,
-      fontSize: isTablet ? 17 : 16,
-    },
-  } as const;
-}
-
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
   title: {
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.altText,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  formContainer: {
-    width: '85%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
+  form: {
+    gap: spacing.lg,
   },
-  input: {
-    width: '100%',
-    backgroundColor: colors.border,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    color: colors.altText,
+  errorText: {
+    color: colors.error,
+    fontWeight: "500",
+    marginBottom: -10,
   },
   buttons: {
     marginTop: 10,
   },
-  errorText: {
-    color: colors.error,
-    width: '100%',
-    textAlign: 'left',
-    marginBottom: -10,
-    fontWeight: '500',
-  }
 });

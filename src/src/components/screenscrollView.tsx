@@ -8,6 +8,7 @@ import {
     ViewStyle,
 } from "react-native";
 
+import { spacing } from "@/theme/tokens";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/theme/colors";
 
@@ -26,9 +27,9 @@ export default function ScreenScrollView({
     contentContainerStyle,
     minTopPadding = 24,
     minBottomPadding = 24,
-    backgroundColor = colors.background,
+    backgroundColor = colors.bg2,
 }: Props) {
-    
+
     const scroll = (
         <ScrollView
             style={[styles.flexFill, { backgroundColor }]}
@@ -39,7 +40,7 @@ export default function ScreenScrollView({
                     paddingBottom: minBottomPadding,
                     backgroundColor,
                 },
-                contentContainerStyle, 
+                contentContainerStyle,
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -72,6 +73,9 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        paddingHorizontal: 16,
+        flexBasis: "auto",
+        alignItems: "center",
+        gap: spacing.xl,
+        paddingHorizontal: spacing.lg,
     },
 });

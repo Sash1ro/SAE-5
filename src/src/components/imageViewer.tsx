@@ -1,7 +1,7 @@
 import { ImageSourcePropType, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '@/stores/stylesStore';
+import { colors } from '@/theme/colors';
 
 type Props = {
   imgSource: ImageSourcePropType | string | null;

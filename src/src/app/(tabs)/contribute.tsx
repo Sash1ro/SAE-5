@@ -1,77 +1,47 @@
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
+import ButtonGroup from "@/components/buttonGroup";
+import FormField from "@/components/formField";
 import ScreenScrollView from "@/components/screenscrollView";
-import { colors } from "@/theme/colors";
+import { layout, spacing } from "@/theme/tokens";
 import { useImageSelection } from "@/hooks/useImageSelection";
 import { useContributionSubmitting } from "@/hooks/useContributionSubmitting";
 
-const isMobile = Platform.OS !== "web"
+const IS_MOBILE = Platform.OS !== "web";
 
 export default function Contribute() {
   const { asset, hasImage, pickFromLibrary, takePicture, clear } = useImageSelection();
   const { submit, setTitle, setVolume, title, volume } = useContributionSubmitting();
 
   return (
-    <ScreenScrollView
-      backgroundColor={colors.bg2}
-      withKeyboardAvoiding={true}
-      contentContainerStyle={styles.scrollContent}
-    >
-      <View style={styles.viewerWrapper}>
-        <ImageViewer imgSource={asset?.uri ?? null} />
+    <ScreenScrollView withKeyboardAvoiding>
+      <ImageViewer imgSource={asset?.uri ?? null} />
+
+      <ButtonGroup maxWidth={layout.formMaxWidth}>
+        {!hasImage && <Button label="Select Image" fun={pickFromLibrary} icon="images" />}
+        {!hasImage && IS_MOBILE && <Button label="Take Photo" fun={takePicture} icon="aperture" />}
+        {hasImage && <Button label="Remove" fun={clear} icon="trash-bin" danger />}
+      </ButtonGroup>
+
+      <View style={[styles.narrow, styles.form]}>
+        <FormField
+          label="Title / Series"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Ex: Chainsaw Man, Naruto..."
+        />
+        <FormField
+          label="Volume number"
+          value={volume}
+          onChangeText={setVolume}
+          placeholder="Ex: 1"
+          keyboardType="numeric"
+        />
       </View>
 
-      <View style={styles.buttonsRow}>
-        {!hasImage && (
-          <Button label="Select Image" fun={pickFromLibrary} icon="images" />
-        )}
-        {!hasImage && isMobile && (
-          <Button label="Take Photo" fun={takePicture} icon="aperture" />
-        )}
-        {hasImage && (
-          <Button
-            label="Remove"
-            fun={clear}
-            icon="trash-bin"
-            danger={true}
-          />
-        )}
-      </View>
-
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Title / Series</Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Ex: Chainsaw Man, Naruto..."
-            placeholderTextColor={colors.placeHolder}
-            style={styles.input}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Volume number</Text>
-          <TextInput
-            value={volume}
-            onChangeText={setVolume}
-            placeholder="Ex: 1"
-            placeholderTextColor={colors.placeHolder}
-            keyboardType="numeric"
-            style={styles.input}
-          />
-        </View>
-      </View>
-
-      <View style={styles.submitContainer}>
+      <View style={[styles.narrow, styles.submit]}>
         <Button
           label="Submit the manga"
           fun={() => submit(asset, clear)}
@@ -83,47 +53,7 @@ export default function Contribute() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    alignItems: "center",
-    gap: 20,
-  },
-  viewerWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-    maxWidth: 320,
-    justifyContent: "center",
-  },
-  formContainer: {
-    width: "100%",
-    maxWidth: 320,
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.onBg,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: colors.onBg,
-    backgroundColor: colors.background,
-  },
-  submitContainer: {
-    width: "100%",
-    maxWidth: 320,
-    marginTop: 8,
-  },
+  narrow: { width: "100%", maxWidth: layout.formMaxWidth },
+  form: { gap: spacing.lg },
+  submit: { marginTop: spacing.sm },
 });

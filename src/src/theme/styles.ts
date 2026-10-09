@@ -1,5 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { colors } from './colors';
 
-export const tokens = {};
-
-export const globalStyles = StyleSheet.create({});
+export const globalStyles = StyleSheet.create({
+    divider: {
+        width: "100%",
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: colors.border,
+    },
+});
