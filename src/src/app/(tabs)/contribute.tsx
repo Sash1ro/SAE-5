@@ -41,6 +41,7 @@ export default function Contribute() {
       }
     } catch (error) {
       console.log(error);
+      showError("Error while loading image.")
     } finally {
       hideLoading();
     }
@@ -55,6 +56,7 @@ export default function Contribute() {
       }
     } catch (error) {
       console.log(error);
+      showError("Error while loading image.")
     } finally {
       hideLoading();
     }

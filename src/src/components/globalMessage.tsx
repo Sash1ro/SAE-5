@@ -1,34 +1,82 @@
 import { View, StyleSheet, Text, Modal } from 'react-native';
 import { colors } from '@/stores/stylesStore'; 
 import { useMessageStore } from '@/stores/useMessageStore';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Button from './button';
 
 export default function GlobalError() {
-  const { isShowingMessage, isShowingError, message, title, hideError, hideMessage } = useMessageStore();
+  const { 
+    isShowingMessage, 
+    isShowingError, 
+    isShowingConfirmation, 
+    message, 
+    title, 
+    onConfirm,
+    hideError, 
+    hideMessage,
+    hideConfirmation 
+  } = useMessageStore();
+  
   const hide = () => {
-    hideError()
-    hideMessage()
+    if (isShowingError) hideError();
+    if (isShowingMessage) hideMessage();
+    if (isShowingConfirmation) hideConfirmation();
+  };
+
+  const handleConfirm = () => {
+    if (onConfirm) onConfirm();
+    hideConfirmation();
+  };
+
+  const isVisible = isShowingMessage || isShowingError || isShowingConfirmation;
+
+  let themeColor = colors.main;
+  let themeBg = 'rgba(150, 150, 150, 0.1)'; 
+  let iconName: keyof typeof Ionicons.glyphMap = 'help-outline'; 
+
+  if (isShowingError) {
+    themeColor = colors.error;
+    themeBg = 'rgba(255, 59, 48, 0.1)';
+    iconName = 'alert-outline';
+  } else if (isShowingMessage) {
+    themeColor = 'rgb(61, 213, 135)'; 
+    themeBg = 'rgba(48, 255, 148, 0.1)';
+    iconName = 'checkmark-outline';
   }
+
   return (
     <Modal
       transparent
-      visible={isShowingMessage || isShowingError}
+      visible={isVisible}
       onRequestClose={hide}
     >
       <View style={styles.overlay}>
         <View style={styles.box} accessibilityRole="alert">
-          <View style={[styles.iconContainer, { backgroundColor : isShowingMessage ? 'rgba(48, 255, 148, 0.1)' : 'rgba(255, 59, 48, 0.1)' }]}>
-            <Text style={[styles.iconText, {color: isShowingMessage ? 'rgb(61, 213, 135)' : colors.error}]}>!</Text>
+
+          <View style={[styles.iconContainer, { backgroundColor: themeBg }]}>
+            <Ionicons name={iconName} size={32} color={themeColor} />
           </View>
 
           <View style={styles.textContainer}>
-            <Text style={[styles.title, {color: isShowingMessage ? 'rgb(61, 213, 135)' : colors.error}]}>{title}</Text>
+            <Text style={[styles.title, { color: themeColor }]}>{title}</Text>
             {message ? <Text style={styles.message}>{message}</Text> : null}
           </View>
 
           <View style={styles.buttonWrapper}>
-            <Button label="I understand" fun={hide} />
+            {isShowingConfirmation ? (
+              <View style={styles.buttonRow}>
+                <View style={styles.buttonHalf}>
+                  <Button label="Cancel" fun={hide} alt={true} />
+                </View>
+                <View style={styles.buttonHalf}>
+                  <Button label="Confirm" fun={handleConfirm} danger={true} />
+                </View>
+              </View>
+            ) : (
+              <Button label="I understand" fun={hide} />
+            )}
           </View>
+          
         </View>
       </View>
     </Modal>
@@ -63,15 +111,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  iconText: {
-    color: colors.error,
-    fontSize: 28,
-    fontWeight: '800',
   },
   textContainer: {
     alignItems: 'center',
@@ -79,7 +121,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    color: colors.onBg,
     fontWeight: '700',
     marginBottom: 8,
     textAlign: 'center',
@@ -94,5 +135,13 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     width: '100%',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  buttonHalf: {
+    flex: 1, 
   }
 });

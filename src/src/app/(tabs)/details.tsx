@@ -7,16 +7,17 @@ import { useState, useEffect } from "react";
 import { useLoadingStore } from "@/stores/useLoadingStore";
 import ScreenScrollView from "@/components/screenscrollView";
 import { router, Stack, useGlobalSearchParams } from "expo-router";
+import { useMessageStore } from "@/stores/useMessageStore";
 
 export default function DetailsPage() {
   const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
-  const [fetchFailed, setFetchFailed] = useState(false);
   const showLoading = useLoadingStore((state) => state.showLoading);
   const hideLoading = useLoadingStore((state) => state.hideLoading);
+  const showError = useMessageStore((state) => state.showError);
   const params = useGlobalSearchParams();
   const title = Array.isArray(params.title) ? params.title[0] : params.title;
   const volume = Array.isArray(params.volume) ? params.volume[0] : params.volume;
-  
+
   useEffect(() => {
     if (!title || !volume) {
       return;
@@ -25,23 +26,18 @@ export default function DetailsPage() {
     const fetchDetails = async () => {
       setMangaDetails(null);
       showLoading("Loading details...");
-      setFetchFailed(false);
       try {
         const tomeNumber = parseInt(volume, 10);
         const data = await getCompleteVolumeData(title, tomeNumber);
-        if (data) {
-          setMangaDetails(data);
-        } else {
-          setFetchFailed(true);
-        }
+        if (data) setMangaDetails(data);
       } catch (err) {
-        console.error("Error while fetching:", err);
-        setFetchFailed(true);
+        console.error(err);
+        showError("Error while fetching manga data.");
       } finally {
         hideLoading();
       }
-  };
-    
+    };
+
     fetchDetails();
   }, [title, volume]);
 
@@ -55,9 +51,9 @@ export default function DetailsPage() {
           headerTitleAlign: "left",
           headerLeft: () => (
             <Pressable
-              onPress={() => router.back()} 
+              onPress={() => router.back()}
               style={styles.backButton}
-              hitSlop={15} 
+              hitSlop={15}
             >
               <Ionicons name="arrow-back" size={24} color={colors.placeHolder} />
             </Pressable>
@@ -65,17 +61,10 @@ export default function DetailsPage() {
         }}
       />
 
-      {(!title || !volume ) && (
+      {(!title || !volume) && (
         <View style={styles.emptyState}>
           <Ionicons name="albums-outline" size={48} color={colors.placeHolder} />
           <Text style={styles.emptyText}>No manga detected yet.</Text>
-        </View>
-      )}
-
-      {params && fetchFailed && !mangaDetails && (
-        <View style={styles.emptyState}>
-          <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
-          <Text style={styles.emptyText}>Couldn't load details for this manga.</Text>
         </View>
       )}
 
@@ -96,7 +85,7 @@ export default function DetailsPage() {
             )}
 
             <View style={styles.tomeBadge}>
-              <Text style={styles.tomeBadgeText}>Tome {volume}</Text>
+              <Text style={styles.tomeBadgeText}>Volume {volume}</Text>
             </View>
           </View>
 
@@ -267,7 +256,7 @@ const styles = StyleSheet.create({
   },
   chaptersBlock: {
     width: "100%",
-    gap: 12, 
+    gap: 12,
   },
   chaptersList: {
     width: "100%",
@@ -276,7 +265,7 @@ const styles = StyleSheet.create({
   chapterItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.bg2, 
+    backgroundColor: colors.bg2,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -301,8 +290,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
   },
-   backButton: {
+  backButton: {
     marginRight: 20,
-    marginLeft:  18, 
+    marginLeft: 18,
   },
 });

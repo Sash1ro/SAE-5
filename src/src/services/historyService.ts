@@ -3,9 +3,10 @@ import { processImageToForm } from "@/utils/processImage";
 import { AxiosResponse } from "axios";
 
 export interface History {
+    id: string,
     universe_name: string,
     universe_volume: number,
-    image: string,
+    image_64: string,
     ia_confidence: number,
     ia_similarity: number,
     history_result: string,
