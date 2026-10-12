@@ -1,8 +1,6 @@
 import { colors } from "@/theme/colors";
-import { Text, View, StyleSheet, Pressable } from "react-native";
-import { Image } from "expo-image";
+import { Text, View, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect } from "react";
 import ScreenScrollView from "@/components/screenscrollView";
 import { useMangaFetching } from "@/hooks/useMangaFetching";
 import VolumeBadge from "@/components/volumeBadge";
@@ -12,36 +10,26 @@ import Badge from "@/components/badge";
 import { globalStyles } from "@/theme/styles";
 import Card from "@/components/card";
 import AppText from "@/components/appText";
+import CoverImage from "@/components/coverImage";
 
 export default function DetailsPage() {
-  const {title, volume, mangaDetails} = useMangaFetching()
+  const { title, volume, mangaDetails } = useMangaFetching()
 
   return (
     <ScreenScrollView>
-      <BackButton/>
+      <BackButton />
 
       {(!title || !volume) && (
-        <EmptyState text="No Manga detected yet."/>
+        <EmptyState text="No Manga detected yet." />
       )}
 
       {mangaDetails && (
         <Card>
           <View style={styles.coverWrapper}>
-            {mangaDetails.volumeCoverUrl ? (
-              <Image
-                source={mangaDetails.volumeCoverUrl}
-                style={styles.cover}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View style={[styles.cover, styles.coverPlaceholder]}>
-                <Ionicons name="book-outline" size={48} color={colors.placeHolder} />
-              </View>
-            )}
-
-            <VolumeBadge label={`Volume ${volume}`}></VolumeBadge>
+            <CoverImage uri={mangaDetails.volumeCoverUrl} width={180} height={260} />
+            <VolumeBadge label={`Volume ${volume}`} size="md" />
           </View>
+
 
           <View style={styles.headingBlock}>
             <Text style={styles.title} numberOfLines={3}>
@@ -56,14 +44,14 @@ export default function DetailsPage() {
           </View>
 
           <View style={styles.badgeRow}>
-            <Badge label={mangaDetails.type}/>
-            <Badge label={mangaDetails.status} color={colors.second} icon="bookmark-outline"/>
+            <Badge label={mangaDetails.type} />
+            <Badge label={mangaDetails.status} color={colors.second} icon="bookmark-outline" />
           </View>
 
           <View style={globalStyles.divider} />
 
           <View style={styles.resumeBlock}>
-            <AppText label="Synopsis"/>
+            <AppText label="Synopsis" />
             <Text style={styles.resumeText}>
               {mangaDetails.resume || "No synopsis available."}
             </Text>

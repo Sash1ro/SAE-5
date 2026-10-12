@@ -21,6 +21,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.background,
   },
   badgeSm: {
     bottom: -6,
