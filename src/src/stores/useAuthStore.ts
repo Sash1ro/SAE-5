@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface AuthState {
+type AuthState = {
   isLoggedIn: boolean;
   setIsLoggedIn: (val : boolean) => void;
 }

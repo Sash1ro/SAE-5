@@ -1,7 +1,7 @@
 import { colors } from "@/theme/colors";
-import { Text } from "react-native";
+import { Text, TextProps } from "react-native";
 
-type Props = {
+type Props = TextProps & {
     label: string;
     color?: string;
     fontSize?: number;

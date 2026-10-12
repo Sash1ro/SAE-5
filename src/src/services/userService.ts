@@ -1,17 +1,17 @@
 import { apiClient } from "@/services/apiService";
 import { AxiosResponse } from "axios";
 
-export interface Credentials {
+export type Credentials = {
     email : string,
     password: string
 }
 
-export interface UserPublic {
+export type UserPublic = {
     id: string,
     email: string;
 }
 
-export interface AuthResp {
+export type AuthResp = {
     user: UserPublic
     token: string
 }

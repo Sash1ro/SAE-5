@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface LoadingState {
+type LoadingState = {
   isLoading: boolean;
   message: string;
   showLoading: (msg?: string) => void;

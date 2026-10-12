@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export interface DetectionResult {
+export type DetectionResult = {
   label: string;
   universe: string;
   tome: string;

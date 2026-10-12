@@ -2,7 +2,7 @@ import { apiClient } from "@/services/apiService";
 import { processImageToForm } from "@/utils/processImage";
 import { AxiosResponse } from "axios";
 
-export interface History {
+export type History = {
     id: string,
     universe_name: string,
     universe_volume: number,

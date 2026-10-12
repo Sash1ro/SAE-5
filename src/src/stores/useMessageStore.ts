@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 type Kind = "error" | "success" | "confirm";
 
-interface MessageState {
+type MessageState = {
   visible: boolean;
   kind: Kind;
   title: string;

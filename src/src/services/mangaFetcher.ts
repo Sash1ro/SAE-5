@@ -7,7 +7,7 @@ const MANGADEX_API = 'https://api.mangadex.org';
 const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
 const CACHE_PREFIX = '@manga_fetcher_cache_v2_';
 
-export interface Manga {
+export type Manga = {
     mangaId: string;
     title: string;
     type: string;
