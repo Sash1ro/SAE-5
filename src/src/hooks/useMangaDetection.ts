@@ -15,11 +15,9 @@ export function useMangaDetection() {
         const result = await run(() => classifyManga(asset, DEF_CONFIDENCE, DEF_SIMILARITY), {
             loadingText: "AI identification...",
             errorMessage: "Error while detecting your manga, please try again.",
-        },
-        );
+        });
 
-        if (result === undefined) return;
-        if (result === null) {
+        if (!result) {
             showError(
                 "This manga does not appear in the index, or the shot is too unclear.",
                 "Not found",

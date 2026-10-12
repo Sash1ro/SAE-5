@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEFAULT_TTL = 1000 * 60 * 60 * 24;
+const DEFAULT_TTL = 1000 * 60 * 60 * 6;
 
 export async function getCache<T>(key: string): Promise<{ found: boolean; data: T | null }> {
   try {
@@ -31,5 +31,13 @@ export async function setCache<T>(key: string, data: T, ttl: number = DEFAULT_TT
     );
   } catch (error) {
     // silent error
+  }
+}
+
+export async function clearCache() {
+  try {
+    await AsyncStorage.clear();
+  } catch (error) {
+    //silent error
   }
 }

@@ -1,5 +1,4 @@
 import { Platform, StyleSheet, View } from "react-native";
-
 import ImageViewer from "@/components/imageViewer";
 import Button from "@/components/button";
 import ButtonGroup from "@/components/buttonGroup";

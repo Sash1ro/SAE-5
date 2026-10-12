@@ -43,9 +43,9 @@ export default function AboutScreen() {
       </Card>
 
       <Card>
-        <SectionHeader icon="heart" title="Special Thanks" iconColor={colors.error} />
+        <SectionHeader icon="accessibility" title="API" iconColor={colors.error} />
         <Text style={styles.paragraph}>
-          Manga metadata, volume information, and high-quality cover images are graciously provided
+          Manga metadata, volume information, and high-quality cover images are provided
           by the MangaDex API.
         </Text>
 

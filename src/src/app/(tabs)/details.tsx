@@ -14,8 +14,7 @@ import Card from "@/components/card";
 import AppText from "@/components/appText";
 
 export default function DetailsPage() {
-  const {title, volume, fetch, mangaDetails} = useMangaFetching()
-  useEffect(() => {fetch()}, [title, volume]);
+  const {title, volume, mangaDetails} = useMangaFetching()
 
   return (
     <ScreenScrollView>

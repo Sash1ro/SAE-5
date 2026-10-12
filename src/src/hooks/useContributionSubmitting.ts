@@ -8,8 +8,8 @@ export function useContributionSubmitting() {
     const [title, setTitle] = useState("");
     const [volume, setVolume] = useState("");
     const run = useAsyncAction();
-    const showError = useMessageStore((state) => state.showError);
-    const showMessage = useMessageStore((state) => state.showMessage);
+    const showError = useMessageStore((s) => s.showError);
+    const showMessage = useMessageStore((s) => s.showMessage);
 
     const submitContrib = async (asset: ImagePickerAsset | null, clearImage: () => void) => {
         const volumeNumber = Number(volume.trim());
@@ -30,17 +30,14 @@ export function useContributionSubmitting() {
             return;
         }
 
-        const ok = await run(async () => {
+        await run(async () => {
             await uploadToContribute(trimmedTitle, volumeNumber, asset.uri);
             showMessage("Your contribution has been submitted.", "Success")
             setTitle(""); setVolume(""); clearImage();
-            return true;
         }, {
             loadingText: "Submitting contribution...",
             errorMessage: "Error while submitting, please retry later."
         })
-
-        if (!ok) return;
     }
 
     return {

@@ -23,7 +23,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   title: { fontSize: fontSize.lg, fontWeight: "700", color: colors.onBg },
 });

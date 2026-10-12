@@ -3,9 +3,11 @@ import { useLoadingStore } from "@/stores/useLoadingStore";
 import { useMessageStore } from "@/stores/useMessageStore";
 
 type AsyncOptions = {
-    loadingText: string;
-    errorMessage: string;
+    useLoading?: boolean;
+    loadingText?: string;
+    errorMessage?: string;
     errorTitle?: string;
+    onError?: (error: unknown) => void;
 };
 
 export function useAsyncAction() {
@@ -14,15 +16,19 @@ export function useAsyncAction() {
     const showError = useMessageStore((s) => s.showError);
 
     return useCallback(
-        async <T,>(action: () => Promise<T>, opts: AsyncOptions): Promise<T | undefined> => {
-            showLoading(opts.loadingText);
+        async <T,>(
+            action: () => Promise<T>,
+            { useLoading = true, loadingText, errorMessage, errorTitle, onError }: AsyncOptions,
+        ): Promise<T | undefined> => {
+            if (useLoading) showLoading(loadingText);
             try {
                 return await action();
             } catch (error) {
                 console.error(error);
-                showError(opts.errorMessage, opts.errorTitle);
+                if (onError) onError(error);
+                if (errorMessage) showError(errorMessage, errorTitle);
             } finally {
-                hideLoading();
+                if (useLoading) hideLoading();
             }
         },
         [showLoading, hideLoading, showError],

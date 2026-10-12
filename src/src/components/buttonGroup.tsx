@@ -1,3 +1,4 @@
+import { layout } from "@/theme/tokens";
 import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
 
@@ -11,7 +12,7 @@ type Props = {
 export default function ButtonGroup({
   children,
   minButtonWidth = 140,
-  maxWidth = 420,
+  maxWidth = layout.formMaxWidth,
   style,
 }: Props) {
   const items = React.Children.toArray(children).filter(Boolean);

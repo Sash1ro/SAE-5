@@ -1,61 +1,64 @@
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
 import { getAllHisotry, History, removeHistory } from "@/services/historyService";
-import { useLoadingStore } from "@/stores/useLoadingStore";
 import { useMessageStore } from "@/stores/useMessageStore";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useAsyncAction } from "./useAsyncAction";
 
 export function useHistoryFetching() {
-    const showLoading = useLoadingStore((state) => state.showLoading);
-    const hideLoading = useLoadingStore((state) => state.hideLoading);
-    const showConfirm = useMessageStore((state) => state.showConfirmation);
-    const [history, setHistory] = useState<History[] | null>(null);
-    const isFirstLoad = useRef(true);
     const router = useRouter();
+    const run = useAsyncAction();
+    const showConfirm = useMessageStore((s) => s.showConfirmation);
 
-    const fetchHistory = async () => {
-        if (isFirstLoad.current) {
-            showLoading("Loading history...");
-        }
-        try {
-            const resp = await getAllHisotry();
-            if (resp.data) setHistory(resp.data);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            if (isFirstLoad.current) {
-                hideLoading();
-                isFirstLoad.current = false;
-            }
-        }
-    };
+    const [history, setHistory] = useState<History[] | null>(null);
+    const hasLoaded = useRef(false);
 
-    const handleFetch = (history: History) => {
+    const fetchHistory = useCallback(async () => {
+        const resp = await run(() => getAllHisotry(), {
+            useLoading: !hasLoaded.current,
+            loadingText: "Loading history...",
+            errorMessage: "Failed to load history.",
+        });
+
+        if (!resp) return;
+        hasLoaded.current = true;
+        if (resp.data) setHistory(resp.data);
+    }, [run]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchHistory();
+        }, [fetchHistory]),
+    );
+
+    const openDetails = (h: History) =>
         router.push({
             pathname: "/details",
-            params: { title: history.universe_name, volume: history.universe_volume },
+            params: { title: h.universe_name, volume: String(h.universe_volume) },
         });
-    }
 
-    const handleDelete = async (h: History) => showConfirm("Do you want to delete this history?", "History", 
-        () => confDelete(h.id));
+    const deleteEntry = async (id: string) => {
+        const ok = await run(
+            async () => {
+                await removeHistory(id);
+                return true;
+            },
+            {
+                loadingText: "Deleting history...",
+                errorMessage: "Failed to delete this entry.",
+            },
+        );
 
-    const confDelete = async (id: string) => {
-        showLoading("Deleting history");
-        try {
-            await removeHistory(id);
-            setHistory((prev) => prev ? prev.filter(item => item.id !== id) : null);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            hideLoading();
-            fetchHistory();
-        }
-    }
+        if (ok) setHistory((prev) => prev?.filter((item) => item.id !== id) ?? null);
+    };
+
+    const confirmDelete = (h: History) =>
+        showConfirm("Do you want to delete this history?", "History", () =>
+            deleteEntry(h.id),
+        );
 
     return {
-        handleDelete,
-        handleFetch,
-        fetchHistory,
-        history
-    }
+        history,
+        handleFetch: openDetails,
+        handleDelete: confirmDelete,
+    };
 }

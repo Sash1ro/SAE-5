@@ -13,17 +13,9 @@ import { History } from "@/services/historyService";
 import { colors } from "@/theme/colors";
 import { fontSize, radius, spacing } from "@/theme/tokens";
 import { formatDate } from "@/utils/utils";
-import ScreenScrollView from "@/components/screenscrollView";
 
 export default function HistoryPage() {
-  const { handleDelete, handleFetch, fetchHistory, history } = useHistoryFetching();
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchHistory();
-    }, [])
-  );
-
+  const { handleDelete, handleFetch, history } = useHistoryFetching();
   const isEmpty = !history || history.length === 0;
 
   return (
