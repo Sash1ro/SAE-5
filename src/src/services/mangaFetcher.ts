@@ -5,15 +5,14 @@ import { formatToStub } from '@/utils/utils';
 
 const MANGADEX_API = 'https://api.mangadex.org';
 const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
-const CACHE_PREFIX = '@manga_fetcher_cache_';
+const CACHE_PREFIX = '@manga_fetcher_cache_v4_';
 
-const SEARCH_LIMIT = 20;
+const SEARCH_LIMIT = 30;
 const FEED_PAGE_SIZE = 500;
 const FEED_MAX_PAGES = 5;
 const MIN_SCORE = 20;
 
-const EXCLUDED_TAG_NAMES = [
-    'doujinshi',
+const PENALIZED_TAG_NAMES = [
     'anthology',
     '4-koma',
     'official colored',
@@ -41,31 +40,6 @@ function generateCacheKey(universe: string, tome: number): string {
     return formatToStub(`${CACHE_PREFIX}${universe.trim().toLowerCase()}_${tome}`);
 }
 
-let excludedTagIdsPromise: Promise<string[]> | null = null;
-
-function getExcludedTagIds(): Promise<string[]> {
-    if (!excludedTagIdsPromise) {
-        excludedTagIdsPromise = axios
-            .get(`${MANGADEX_API}/manga/tag`)
-            .then((res) =>
-                (res.data?.data ?? [])
-                    .filter((t: any) =>
-                        EXCLUDED_TAG_NAMES.includes((t.attributes?.name?.en ?? '').toLowerCase())
-                    )
-                    .map((t: any) => t.id as string)
-            )
-            .catch(() => {
-                excludedTagIdsPromise = null;
-                return [];
-            });
-    }
-    return excludedTagIdsPromise;
-}
-
-function getTagNames(attrs: any): string[] {
-    return (attrs.tags || []).map((t: any) => (t.attributes?.name?.en ?? '').toLowerCase());
-}
-
 const normalize = (s: string): string =>
     s
         .toLowerCase()
@@ -74,6 +48,16 @@ const normalize = (s: string): string =>
         .replace(/[^\p{L}\p{N}\s]/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+
+function getTagNames(attrs: any): string[] {
+    return (attrs.tags || []).map((t: any) => (t.attributes?.name?.en ?? '').toLowerCase());
+}
+
+function getTitles(attrs: any): { main: string[]; alts: string[] } {
+    const main = Object.values(attrs.title || {}) as string[];
+    const alts = (attrs.altTitles || []).flatMap((o: any) => Object.values(o) as string[]);
+    return { main, alts };
+}
 
 function scoreTitle(query: string, candidate: string): number {
     if (!candidate) return 0;
@@ -88,9 +72,9 @@ function scoreTitle(query: string, candidate: string): number {
     let score: number;
 
     if (candidate.startsWith(query + ' ')) {
-        score = 85 - extraPenalty;
+        score = 75 - extraPenalty;
     } else if (qTokens.every((t) => cSet.has(t))) {
-        score = 65 - extraPenalty;
+        score = 60 - extraPenalty;
     } else {
         const q = new Set(qTokens);
         const inter = [...q].filter((t) => cSet.has(t)).length;
@@ -102,19 +86,11 @@ function scoreTitle(query: string, candidate: string): number {
     return Math.max(score, 0);
 }
 
-function getTitles(attrs: any): { main: string[]; alts: string[] } {
-    const main = Object.values(attrs.title || {}) as string[];
-    const alts = (attrs.altTitles || []).flatMap((o: any) => Object.values(o) as string[]);
-    return { main, alts };
-}
-
 function isHardExcluded(manga: any): boolean {
     const attrs = manga.attributes;
     if (['pornographic', 'erotica'].includes(attrs.contentRating)) return true;
     if (attrs.publicationDemographic === 'doujinshi') return true;
-
-    const tagNames = getTagNames(attrs);
-    return EXCLUDED_TAG_NAMES.some((t) => tagNames.includes(t));
+    return getTagNames(attrs).includes('doujinshi');
 }
 
 function isDerivative(manga: any): boolean {
@@ -123,17 +99,27 @@ function isDerivative(manga: any): boolean {
     );
 }
 
+function hasExactMainTitle(query: string, attrs: any): boolean {
+    return getTitles(attrs).main.some((t) => normalize(t) === query);
+}
+
 function scoreManga(query: string, manga: any, index: number): number {
     const attrs = manga.attributes;
-    const { main, alts } = getTitles(attrs);
 
+    if (hasExactMainTitle(query, attrs)) {
+        return 100 - index * 0.5;
+    }
+
+    const { main, alts } = getTitles(attrs);
     const mainBest = Math.max(...main.map((t) => scoreTitle(query, normalize(t))), 0);
     const altBest = Math.max(...alts.map((t) => scoreTitle(query, normalize(t))), 0) * 0.95;
 
     let score = Math.max(mainBest, altBest);
 
+    const tagNames = getTagNames(attrs);
     if (isDerivative(manga)) score -= 40;
-    if (attrs.tags && getTagNames(attrs).includes('oneshot')) score -= 15;
+    if (PENALIZED_TAG_NAMES.some((t) => tagNames.includes(t))) score -= 35;
+    if (tagNames.includes('oneshot')) score -= 15;
 
     return score - index * 0.5;
 }
@@ -154,18 +140,12 @@ function findMangaBestResult(title: string, mangas: any[]): any | null {
 
 async function fetchMangaByTitle(title: string): Promise<any | null> {
     try {
-        const excludedTags = await getExcludedTagIds();
-
         const res = await axios.get(`${MANGADEX_API}/manga`, {
             params: {
                 title,
                 'includes[]': ['author', 'cover_art'],
                 'order[relevance]': 'desc',
                 'contentRating[]': ['safe', 'suggestive'],
-                ...(excludedTags.length > 0 && {
-                    'excludedTags[]': excludedTags,
-                    excludedTagsMode: 'OR',
-                }),
                 limit: SEARCH_LIMIT,
             },
         });
