@@ -5,7 +5,25 @@ import { formatToStub } from '@/utils/utils';
 
 const MANGADEX_API = 'https://api.mangadex.org';
 const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
-const CACHE_PREFIX = '@manga_fetcher_cache_v2_';
+const CACHE_PREFIX = '@manga_fetcher_cache_';
+
+const SEARCH_LIMIT = 20;
+const FEED_PAGE_SIZE = 500;
+const FEED_MAX_PAGES = 5;
+const MIN_SCORE = 20;
+
+const EXCLUDED_TAG_NAMES = [
+    'doujinshi',
+    'anthology',
+    '4-koma',
+    'official colored',
+    'fan colored',
+];
+
+const DERIVATIVE_RELATIONS = new Set(['main_story', 'based_on', 'adapted_from', 'monochrome']);
+
+const VARIANT_REGEX =
+    /\b(colou?red|anthology|fan ?book|spin ?off|4 ?koma|art ?book|official (guide|anthology|comic)|gaiden|side stor(y|ies)|omake|parody|doujin(shi)?|character book|data ?book|light novel|novel)\b/;
 
 export type Manga = {
     mangaId: string;
@@ -17,10 +35,35 @@ export type Manga = {
     tags: string[];
     volumeCoverUrl: string | null;
     chapters: Array<{ chapterId: string; title: string; chapter: number }> | null;
-}
+};
 
 function generateCacheKey(universe: string, tome: number): string {
     return formatToStub(`${CACHE_PREFIX}${universe.trim().toLowerCase()}_${tome}`);
+}
+
+let excludedTagIdsPromise: Promise<string[]> | null = null;
+
+function getExcludedTagIds(): Promise<string[]> {
+    if (!excludedTagIdsPromise) {
+        excludedTagIdsPromise = axios
+            .get(`${MANGADEX_API}/manga/tag`)
+            .then((res) =>
+                (res.data?.data ?? [])
+                    .filter((t: any) =>
+                        EXCLUDED_TAG_NAMES.includes((t.attributes?.name?.en ?? '').toLowerCase())
+                    )
+                    .map((t: any) => t.id as string)
+            )
+            .catch(() => {
+                excludedTagIdsPromise = null;
+                return [];
+            });
+    }
+    return excludedTagIdsPromise;
+}
+
+function getTagNames(attrs: any): string[] {
+    return (attrs.tags || []).map((t: any) => (t.attributes?.name?.en ?? '').toLowerCase());
 }
 
 const normalize = (s: string): string =>
@@ -32,64 +75,98 @@ const normalize = (s: string): string =>
         .replace(/\s+/g, ' ')
         .trim();
 
-const VARIANT_REGEX = /(colou?red|anthology|fanbook|spin ?off|4 ?koma|artbook|official guide)/;
-
 function scoreTitle(query: string, candidate: string): number {
     if (!candidate) return 0;
     if (candidate === query) return 100;
 
-    const q = new Set(query.split(' '));
-    const c = new Set(candidate.split(' '));
-    const inter = [...q].filter((t) => c.has(t)).length;
-    const union = new Set([...q, ...c]).size;
+    const qTokens = query.split(' ');
+    const cTokens = candidate.split(' ');
+    const cSet = new Set(cTokens);
+    const extra = Math.max(cTokens.length - qTokens.length, 0);
+    const extraPenalty = Math.min(extra * 1.5, 20);
 
-    let score = (inter / union) * 80;
-    if (candidate.startsWith(query + ' ')) score += 10;
+    let score: number;
+
+    if (candidate.startsWith(query + ' ')) {
+        score = 85 - extraPenalty;
+    } else if (qTokens.every((t) => cSet.has(t))) {
+        score = 65 - extraPenalty;
+    } else {
+        const q = new Set(qTokens);
+        const inter = [...q].filter((t) => cSet.has(t)).length;
+        const union = new Set([...q, ...cSet]).size;
+        score = (inter / union) * 80;
+    }
+
     if (VARIANT_REGEX.test(candidate) && !VARIANT_REGEX.test(query)) score -= 30;
-    return score;
+    return Math.max(score, 0);
 }
 
-function getAllTitles(attrs: any): string[] {
+function getTitles(attrs: any): { main: string[]; alts: string[] } {
     const main = Object.values(attrs.title || {}) as string[];
     const alts = (attrs.altTitles || []).flatMap((o: any) => Object.values(o) as string[]);
-    return [...main, ...alts];
+    return { main, alts };
+}
+
+function isHardExcluded(manga: any): boolean {
+    const attrs = manga.attributes;
+    if (['pornographic', 'erotica'].includes(attrs.contentRating)) return true;
+    if (attrs.publicationDemographic === 'doujinshi') return true;
+
+    const tagNames = getTagNames(attrs);
+    return EXCLUDED_TAG_NAMES.some((t) => tagNames.includes(t));
+}
+
+function isDerivative(manga: any): boolean {
+    return (manga.relationships || []).some(
+        (r: any) => r.type === 'manga' && DERIVATIVE_RELATIONS.has(r.related)
+    );
+}
+
+function scoreManga(query: string, manga: any, index: number): number {
+    const attrs = manga.attributes;
+    const { main, alts } = getTitles(attrs);
+
+    const mainBest = Math.max(...main.map((t) => scoreTitle(query, normalize(t))), 0);
+    const altBest = Math.max(...alts.map((t) => scoreTitle(query, normalize(t))), 0) * 0.95;
+
+    let score = Math.max(mainBest, altBest);
+
+    if (isDerivative(manga)) score -= 40;
+    if (attrs.tags && getTagNames(attrs).includes('oneshot')) score -= 15;
+
+    return score - index * 0.5;
 }
 
 function findMangaBestResult(title: string, mangas: any[]): any | null {
     const query = normalize(title);
 
-    const scored = mangas.map((manga, index) => {
-        const attrs = manga.attributes;
+    const scored = mangas
+        .map((manga, index) => ({
+            manga,
+            score: isHardExcluded(manga) ? -Infinity : scoreManga(query, manga, index),
+        }))
+        .filter((s) => s.score >= MIN_SCORE)
+        .sort((a, b) => b.score - a.score);
 
-        if (
-            ['porn', 'erotica'].includes(attrs.contentRating) ||
-            attrs.publicationDemographic === 'doujinshi'
-        ) {
-            return { manga, score: -Infinity };
-        }
-
-        const best = Math.max(
-            ...getAllTitles(attrs).map((t) => scoreTitle(query, normalize(t))),
-            0
-        );
-
-        return { manga, score: best - index * 0.5 };
-    });
-
-    scored.sort((a, b) => b.score - a.score);
-    const top = scored[0];
-    return top && top.score > -Infinity ? top.manga : null;
+    return scored[0]?.manga ?? null;
 }
 
 async function fetchMangaByTitle(title: string): Promise<any | null> {
     try {
+        const excludedTags = await getExcludedTagIds();
+
         const res = await axios.get(`${MANGADEX_API}/manga`, {
             params: {
                 title,
                 'includes[]': ['author', 'cover_art'],
                 'order[relevance]': 'desc',
                 'contentRating[]': ['safe', 'suggestive'],
-                limit: 20,
+                ...(excludedTags.length > 0 && {
+                    'excludedTags[]': excludedTags,
+                    excludedTagsMode: 'OR',
+                }),
+                limit: SEARCH_LIMIT,
             },
         });
 
@@ -98,6 +175,7 @@ async function fetchMangaByTitle(title: string): Promise<any | null> {
 
         return findMangaBestResult(title, mangas);
     } catch (error) {
+        console.error('[mangaFetcher] search failed', error);
         return null;
     }
 }
@@ -111,46 +189,78 @@ async function fetchVolumeCoverUrl(
         const res = await axios.get(`${MANGADEX_API}/cover`, {
             params: {
                 'manga[]': [mangaId],
+                'order[volume]': 'asc',
                 limit: 100,
             },
         });
-        const covers = res.data?.data;
-        if (covers && Array.isArray(covers)) {
-            const exactCover = covers.find((c: any) => c.attributes?.volume === volume);
 
-            if (exactCover?.attributes?.fileName) {
-                return `${COVER_BASE_URL}/${mangaId}/${exactCover.attributes.fileName}`;
-            }
+        const covers: any[] = Array.isArray(res.data?.data) ? res.data.data : [];
+        const forVolume = covers.filter((c) => c.attributes?.volume === volume);
+
+        const best =
+            forVolume.find((c) => c.attributes?.locale === 'en') ??
+            forVolume.find((c) => c.attributes?.locale === 'ja') ??
+            forVolume[0];
+
+        if (best?.attributes?.fileName) {
+            return `${COVER_BASE_URL}/${mangaId}/${best.attributes.fileName}`;
         }
     } catch (error) {
-        console.error(error)
+        console.error('[mangaFetcher] cover fetch failed', error);
     }
 
     return defaultFileName ? `${COVER_BASE_URL}/${mangaId}/${defaultFileName}` : null;
 }
 
-async function fetchVolumeChapters(mangaId: string, volume: string) {
-    try {
+async function fetchAllFeed(mangaId: string): Promise<any[]> {
+    const all: any[] = [];
+
+    for (let page = 0; page < FEED_MAX_PAGES; page++) {
+        const offset = page * FEED_PAGE_SIZE;
         const res = await axios.get(`${MANGADEX_API}/manga/${mangaId}/feed`, {
             params: {
-                limit: 500,
+                limit: FEED_PAGE_SIZE,
+                offset,
                 'translatedLanguage[]': ['en'],
                 'order[chapter]': 'asc',
             },
         });
 
-        const allChapters = res.data?.data;
-        if (!allChapters || !Array.isArray(allChapters)) return null;
+        const data = res.data?.data;
+        if (!Array.isArray(data) || data.length === 0) break;
+        all.push(...data);
 
-        const volumeChaps = allChapters.filter((c: any) => c.attributes.volume === volume);
-        if (volumeChaps.length === 0) return null;
+        const total = res.data?.total ?? 0;
+        if (offset + FEED_PAGE_SIZE >= total) break;
+    }
 
-        return volumeChaps.map((c: any) => ({
-            chapterId: c.id,
-            title: c.attributes.title || `Chapter ${c.attributes.chapter}`,
-            chapter: Number(c.attributes.chapter),
-        }));
+    return all;
+}
+
+async function fetchVolumeChapters(mangaId: string, volume: string) {
+    try {
+        const allChapters = await fetchAllFeed(mangaId);
+
+        const byNumber = new Map<number, { chapterId: string; title: string; chapter: number }>();
+
+        for (const c of allChapters) {
+            const a = c.attributes;
+            if (a.volume !== volume || a.chapter == null) continue;
+
+            const num = Number(a.chapter);
+            if (Number.isNaN(num) || byNumber.has(num)) continue;
+
+            byNumber.set(num, {
+                chapterId: c.id,
+                title: a.title || `Chapter ${a.chapter}`,
+                chapter: num,
+            });
+        }
+
+        if (byNumber.size === 0) return null;
+        return [...byNumber.values()].sort((a, b) => a.chapter - b.chapter);
     } catch (error) {
+        console.error('[mangaFetcher] chapters fetch failed', error);
         return null;
     }
 }
@@ -195,7 +305,6 @@ export async function getCompleteVolumeData(universe: string, tome: number): Pro
 
     const mangaId = manga.id;
     const targetVolume = tome.toString();
-
     const meta = extractMangaMetadata(manga);
 
     const [volumeCoverUrl, chapters] = await Promise.all([
