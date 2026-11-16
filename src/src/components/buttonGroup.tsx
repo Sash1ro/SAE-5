@@ -1,18 +1,17 @@
-import { layout } from "@/theme/tokens";
 import React from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 type Props = {
   children: React.ReactNode;
   minButtonWidth?: number;
   maxWidth?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 export default function ButtonGroup({
   children,
-  minButtonWidth = 140,
-  maxWidth = layout.formMaxWidth,
+  minButtonWidth = 110,
+  maxWidth = 320,
   style,
 }: Props) {
   const items = React.Children.toArray(children).filter(Boolean);
@@ -20,10 +19,7 @@ export default function ButtonGroup({
   return (
     <View style={[styles.container, { maxWidth }, style]}>
       {items.map((child, index) => (
-        <View
-          key={index}
-          style={[styles.slot, { minWidth: minButtonWidth }]}
-        >
+        <View key={index} style={[styles.slot, { minWidth: minButtonWidth }]}>
           {child}
         </View>
       ))}
@@ -44,6 +40,6 @@ const styles = StyleSheet.create({
   slot: {
     flexGrow: 1,
     flexShrink: 1,
-    alignItems: "center",
+    alignItems: "stretch",
   },
 });

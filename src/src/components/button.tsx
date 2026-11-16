@@ -1,89 +1,102 @@
-import { StyleSheet, View, Pressable, Text } from 'react-native';
-import { colors } from "@/theme/colors"
-import { useLoadingStore } from '@/stores/useLoadingStore';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors } from "@/theme/colors";
+import { useLoadingStore } from "@/stores/useLoadingStore";
 
 type Props = {
   label?: string;
   fun?: () => void;
+  onPress?: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   alt?: boolean;
   small?: boolean;
   danger?: boolean;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
-export default function Button({ label, fun, icon, alt, small, danger }: Props) {
+export default function Button({
+  label,
+  fun,
+  onPress,
+  icon,
+  alt,
+  small,
+  danger,
+  disabled,
+  style,
+}: Props) {
   const loading = useLoadingStore((state) => state.isLoading);
-  const currentBgColor = alt ? colors.second : danger ? colors.error : colors.main;
-  const currentTextColor = alt ? colors.onMain : colors.onMain;
+  const isDisabled = disabled || loading;
 
+  const bg = danger ? colors.error : alt ? colors.second : colors.main;
   const isIconOnly = !label && !!icon;
-  const iconButtonSize = small ? 40 : 48; 
 
   return (
-    <View 
-      style={[
-        styles.buttonContainer, 
-        { 
-          backgroundColor: currentBgColor, 
-          width: isIconOnly ? iconButtonSize : (small ? "auto" : "100%"), 
-          height: isIconOnly ? iconButtonSize : (small ? "auto" : 48),
-          minWidth: isIconOnly ? iconButtonSize : (small ? 0 : 100), 
-          padding: isIconOnly ? 0 : 3, 
-        }
+    <Pressable
+      disabled={isDisabled}
+      onPress={fun ?? onPress}
+      hitSlop={small ? 8 : 4}
+      style={({ pressed }) => [
+        styles.button,
+        small ? styles.buttonSm : styles.buttonMd,
+        { backgroundColor: bg },
+        isIconOnly && styles.iconOnly,
+        pressed && styles.pressed,
+        isDisabled && styles.disabled,
+        style,
       ]}
     >
-      <Pressable
-        disabled={loading}
-        style={[
-          styles.button,
-          isIconOnly && { paddingHorizontal: 0 } 
-        ]}
-        onPress={() => fun ? fun() : alert("Pressed")}
-      >
-        {icon && (
-          <Ionicons 
-            name={icon} 
-            size={isIconOnly && !small ? 24 : 20} 
-            color={currentTextColor} 
-          />
-        )}
-        {label && (
-          <Text
-            style={[styles.buttonLabel, { color: currentTextColor }]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            {label}
-          </Text>
-        )}
-      </Pressable>
-    </View>
+      {icon && (
+        <Ionicons
+          name={icon}
+          size={small ? 18 : 20}
+          color={colors.onMain}
+        />
+      )}
+      {label && (
+        <Text style={[styles.label, small && styles.labelSm]} numberOfLines={1}>
+          {label}
+        </Text>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  buttonContainer: {
-    width: '100%',
-    minWidth: 100,
-    height: 48,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 3,
-  },
   button: {
-    borderRadius: 60,
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
     gap: 8,
-    paddingHorizontal: 8,
   },
-  buttonLabel: {
+  buttonMd: {
+    height: 48,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  buttonSm: {
+    height: 36,
+    paddingHorizontal: 14,
+  },
+  iconOnly: {
+    paddingHorizontal: 0,
+    aspectRatio: 1,
+    width: undefined,
+  },
+  label: {
+    color: colors.onMain,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  labelSm: {
+    fontSize: 14,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

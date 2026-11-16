@@ -6,7 +6,6 @@ import IconButton from "@/components/iconButton";
 import VolumeBadge from "@/components/volumeBadge";
 import { History } from "@/services/historyService";
 import { colors } from "@/theme/colors";
-import { fontSize, radius, spacing } from "@/theme/tokens";
 import { formatDate } from "@/utils/utils";
 
 type Props = {
@@ -60,16 +59,43 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
+    gap: 12,
+    padding: 12,
     backgroundColor: colors.bg2,
-    borderRadius: radius.md,
+    borderRadius: 12,
   },
-  coverWrapper: { alignItems: "center", justifyContent: "center" },
-  info: { flex: 1, justifyContent: "center", gap: spacing.xs },
-  name: { color: colors.onBg, fontSize: fontSize.md, fontWeight: "600" },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { fontSize: fontSize.xs, color: colors.altText, fontWeight: "500" },
-  metaDot: { fontSize: fontSize.xs, color: colors.placeHolder, marginHorizontal: 2 },
-  actions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  coverWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  info: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 4,
+  },
+  name: {
+    color: colors.onBg,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 12,
+    color: colors.altText,
+    fontWeight: "500",
+  },
+  metaDot: {
+    fontSize: 12,
+    color: colors.placeHolder,
+    marginHorizontal: 2,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
 });

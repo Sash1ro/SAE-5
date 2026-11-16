@@ -1,15 +1,16 @@
-import { ImageSourcePropType, StyleSheet, View } from 'react-native';
+import { ImageSourcePropType, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '@/theme/colors';
 
 type Props = {
   imgSource: ImageSourcePropType | string | null;
+  containerStyle?: StyleProp<ViewStyle>
 };
 
-export default function ImageViewer({ imgSource }: Props) {
+export default function ImageViewer({ imgSource, containerStyle }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       <View style={styles.placeholder}>
         <Ionicons name="image-outline" size={64} color={colors.placeHolder} />
       </View>

@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, TextInput, TextInputProps, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
-import { radius, spacing } from "@/theme/tokens";
 
 type Props = Omit<TextInputProps, "value" | "onChangeText"> & {
   value: string;
@@ -48,13 +47,17 @@ const styles = StyleSheet.create({
   box: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+    gap: 8,
+    paddingHorizontal: 12,
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
   },
-  input: { flex: 1, fontSize: 16, color: colors.onBg },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.onBg,
+  },
 });

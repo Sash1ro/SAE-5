@@ -1,7 +1,6 @@
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
-import { spacing } from "@/theme/tokens";
 
 type Props = {
   text: string;
@@ -19,6 +18,16 @@ export default function EmptyState({ text, icon = "albums-outline", style }: Pro
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: "center", gap: spacing.md, paddingHorizontal: 32, flex: 1, justifyContent: "center"  },
-  text: { color: colors.altText, fontSize: 15, textAlign: "center" },
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 32,
+    flex: 1,
+  },
+  text: {
+    color: colors.altText,
+    fontSize: 15,
+    textAlign: "center",
+  },
 });

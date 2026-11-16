@@ -1,8 +1,11 @@
+import React from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { colors } from "@/theme/colors";
-import { layout, radius, shadow, spacing } from "@/theme/tokens";
 
-type Props = { children: React.ReactNode; style?: StyleProp<ViewStyle> };
+type Props = {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+};
 
 export default function Card({ children, style }: Props) {
   return <View style={[styles.card, style]}>{children}</View>;
@@ -10,12 +13,16 @@ export default function Card({ children, style }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    width: layout.cardWidth,
-    maxWidth: layout.cardMaxWidth,
+    width: "90%",
+    maxWidth: 420,
     backgroundColor: colors.background,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
+    borderRadius: 20,
+    padding: 20,
     gap: 20,
-    ...shadow.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
   },
 });

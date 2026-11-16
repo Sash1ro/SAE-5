@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
-import { fontSize, spacing } from "@/theme/tokens";
 
 type Props = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -22,7 +21,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
   },
-  title: { fontSize: fontSize.lg, fontWeight: "700", color: colors.onBg },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onBg,
+  },
 });

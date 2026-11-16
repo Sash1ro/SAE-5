@@ -16,15 +16,16 @@ export default function Contribute() {
 
   return (
     <ScreenScrollView withKeyboardAvoiding>
-      <ImageViewer imgSource={asset?.uri ?? null} />
+      <View style={styles.flexSpacer} />
+      <ImageViewer imgSource={asset?.uri ?? null} containerStyle={hasImage ? {height: 300 } : {}}/>
 
       <ButtonGroup maxWidth={layout.formMaxWidth}>
         {!hasImage && <Button label="Select Image" fun={pickFromLibrary} icon="images" />}
-        {!hasImage && IS_MOBILE && <Button label="Take Photo" fun={takePicture} icon="aperture" />}
+        {!hasImage && IS_MOBILE && <Button label="Take Photo" alt fun={takePicture} icon="aperture" />}
         {hasImage && <Button label="Remove" fun={clear} icon="trash-bin" danger />}
       </ButtonGroup>
 
-      <View style={[styles.narrow, styles.form]}>
+      { hasImage && <View style={[styles.narrow, styles.form]}>
         <FormField
           label="Title / Series"
           value={title}
@@ -38,15 +39,13 @@ export default function Contribute() {
           placeholder="Ex: 1"
           keyboardType="numeric"
         />
-      </View>
-
-      <View style={[styles.narrow, styles.submit]}>
         <Button
           label="Submit the manga"
           fun={() => submit(asset, clear)}
           icon="cloud-upload"
         />
-      </View>
+      </View>}
+      <View style={styles.flexSpacer} />
     </ScreenScrollView>
   );
 }
@@ -55,4 +54,5 @@ const styles = StyleSheet.create({
   narrow: { width: "100%", maxWidth: layout.formMaxWidth },
   form: { gap: spacing.lg },
   submit: { marginTop: spacing.sm },
+  flexSpacer: { flex: 1, minHeight: 16 },
 });

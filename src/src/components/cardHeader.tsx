@@ -1,12 +1,11 @@
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/theme/colors";
-import { fontSize, spacing } from "@/theme/tokens";
 
 type Props = {
   title: string;
   action?: ReactNode;
-  children?: ReactNode; 
+  children?: ReactNode;
 };
 
 export default function CardHeader({ title, action, children }: Props) {
@@ -23,13 +22,17 @@ export default function CardHeader({ title, action, children }: Props) {
 
 const styles = StyleSheet.create({
   header: {
-    gap: spacing.md,
-    paddingBottom: spacing.lg,
+    gap: 12,
+    paddingBottom: 16,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: { fontSize: fontSize.xl, fontWeight: "700", color: colors.onBg },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.onBg,
+  },
 });

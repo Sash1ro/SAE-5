@@ -2,7 +2,6 @@ import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { colors } from "@/theme/colors";
-import { radius } from "@/theme/tokens";
 
 type Props = {
   uri?: string | null;
@@ -17,7 +16,7 @@ export default function CoverImage({
   uri,
   width = 56,
   height = 56,
-  borderRadius = radius.md,
+  borderRadius = 12,
   iconSize = 28,
   style,
 }: Props) {
@@ -42,7 +41,10 @@ export default function CoverImage({
 }
 
 const styles = StyleSheet.create({
-  base: { backgroundColor: colors.border, overflow: "hidden" },
+  base: {
+    backgroundColor: colors.border,
+    overflow: "hidden",
+  },
   placeholder: {
     alignItems: "center",
     justifyContent: "center",

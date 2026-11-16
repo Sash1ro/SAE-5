@@ -56,7 +56,7 @@ export default function TabLayout() {
         <Tabs.Screen
           key={name}
           name={name}
-          options={{ title, headerTitle: APP_NAME, tabBarIcon: icon }}
+          options={{ title, headerTitle: title, tabBarIcon: icon }}
         />
       ))}
 
@@ -67,5 +67,5 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  logout: { marginRight: 15, width: 120 },
+  logout: { marginRight: 15 },
 });
