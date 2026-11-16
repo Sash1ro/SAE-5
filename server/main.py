@@ -10,6 +10,7 @@ from controller.user_controller import router as user_router
 from controller.history_controller import router as history_router
 from controller.contribution_controller import router as contribution_router
 from controller.index_controller import router as index_router
+from controller.mangadex_controller import router as mangadex_router
 
 app = FastAPI(title="Manganitor")
 
@@ -29,6 +30,7 @@ app.include_router(index_router)
 app.include_router(user_router)
 app.include_router(history_router)
 app.include_router(contribution_router)
+app.include_router(mangadex_router)
 
 if not VERSION_FILE.exists():
     with open(VERSION_FILE, "w", encoding="utf-8") as f:

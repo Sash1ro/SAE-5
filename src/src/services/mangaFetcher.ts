@@ -1,13 +1,11 @@
 import axios from 'axios';
 import { cleanResume } from '@/utils/cleanResume';
 import { getCache, setCache } from '@/services/cacheService';
-import { formatToStub } from '@/utils/utils';
+import { apiClient } from '@/services/apiService';
+import { formatToStub, SERVER_URL } from '@/utils/utils';
 
-const MANGADEX_API = 'https://api.mangadex.org';
-const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
 const CACHE_PREFIX = '@manga_fetcher_cache_v4_';
 
-const SEARCH_LIMIT = 30;
 const FEED_PAGE_SIZE = 500;
 const FEED_MAX_PAGES = 5;
 const MIN_SCORE = 20;
@@ -138,25 +136,30 @@ function findMangaBestResult(title: string, mangas: any[]): any | null {
     return scored[0]?.manga ?? null;
 }
 
+function logMangaDexError(operation: string, error: unknown): void {
+    if (axios.isAxiosError(error)) {
+        console.error(`[mangaFetcher] ${operation} failed`, {
+            status: error.response?.status,
+            response: error.response?.data,
+            url: error.config?.url,
+        });
+        return;
+    }
+
+    console.error(`[mangaFetcher] ${operation} failed`, error);
+}
+
 async function fetchMangaByTitle(title: string): Promise<any | null> {
     try {
-        const res = await axios.get(`${MANGADEX_API}/manga`, {
-            params: {
-                title,
-                'includes[]': ['author', 'cover_art'],
-                'order[relevance]': 'desc',
-                'contentRating[]': ['safe', 'suggestive'],
-                limit: SEARCH_LIMIT,
-            },
-        });
+        const res = await apiClient.get('/mangadex/manga', { params: { title } });
 
         const mangas = res.data?.data;
         if (!mangas || mangas.length === 0) return null;
 
         return findMangaBestResult(title, mangas);
     } catch (error) {
-        console.error('[mangaFetcher] search failed', error);
-        return null;
+        logMangaDexError('search', error);
+        throw error;
     }
 }
 
@@ -166,13 +169,7 @@ async function fetchVolumeCoverUrl(
     defaultFileName?: string
 ): Promise<string | null> {
     try {
-        const res = await axios.get(`${MANGADEX_API}/cover`, {
-            params: {
-                'manga[]': [mangaId],
-                'order[volume]': 'asc',
-                limit: 100,
-            },
-        });
+        const res = await apiClient.get('/mangadex/cover', { params: { manga_id: mangaId } });
 
         const covers: any[] = Array.isArray(res.data?.data) ? res.data.data : [];
         const forVolume = covers.filter((c) => c.attributes?.volume === volume);
@@ -183,13 +180,15 @@ async function fetchVolumeCoverUrl(
             forVolume[0];
 
         if (best?.attributes?.fileName) {
-            return `${COVER_BASE_URL}/${mangaId}/${best.attributes.fileName}`;
+            return `${SERVER_URL}/mangadex/covers/${mangaId}/${encodeURIComponent(best.attributes.fileName)}`;
         }
     } catch (error) {
-        console.error('[mangaFetcher] cover fetch failed', error);
+        logMangaDexError('cover metadata', error);
     }
 
-    return defaultFileName ? `${COVER_BASE_URL}/${mangaId}/${defaultFileName}` : null;
+    return defaultFileName
+        ? `${SERVER_URL}/mangadex/covers/${mangaId}/${encodeURIComponent(defaultFileName)}`
+        : null;
 }
 
 async function fetchAllFeed(mangaId: string): Promise<any[]> {
@@ -197,13 +196,8 @@ async function fetchAllFeed(mangaId: string): Promise<any[]> {
 
     for (let page = 0; page < FEED_MAX_PAGES; page++) {
         const offset = page * FEED_PAGE_SIZE;
-        const res = await axios.get(`${MANGADEX_API}/manga/${mangaId}/feed`, {
-            params: {
-                limit: FEED_PAGE_SIZE,
-                offset,
-                'translatedLanguage[]': ['en'],
-                'order[chapter]': 'asc',
-            },
+        const res = await apiClient.get(`/mangadex/manga/${mangaId}/feed`, {
+            params: { limit: FEED_PAGE_SIZE, offset },
         });
 
         const data = res.data?.data;
@@ -240,7 +234,7 @@ async function fetchVolumeChapters(mangaId: string, volume: string) {
         if (byNumber.size === 0) return null;
         return [...byNumber.values()].sort((a, b) => a.chapter - b.chapter);
     } catch (error) {
-        console.error('[mangaFetcher] chapters fetch failed', error);
+        logMangaDexError('chapters fetch', error);
         return null;
     }
 }
