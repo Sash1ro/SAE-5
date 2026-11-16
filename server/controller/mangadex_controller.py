@@ -21,7 +21,6 @@ _cover_filename_pattern = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 async def _wait_for_request_slot() -> None:
-    """Keep this server below MangaDex's documented global request rate."""
     global _next_request_at
 
     loop = asyncio.get_running_loop()
