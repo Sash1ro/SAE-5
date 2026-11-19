@@ -56,10 +56,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Configure Gradle repositories & Expo publishing fix
+      - name: Configure Gradle repositories
         run: |
           mkdir -p ~/.gradle/init.d
-          cat << 'EOF' > ~/.gradle/init.d/ci-fixes.gradle
+          cat << 'EOF' > ~/.gradle/init.d/ci-mirrors.gradle
           def mirrorUrl = "https://maven-central.storage-download.googleapis.com/maven2"
 
           gradle.settingsEvaluated { settings ->
@@ -84,14 +84,6 @@ jobs:
                   }
                   mavenCentral()
               }
-
-              if (proj.name == "expo") {
-                  proj.plugins.withId("com.android.library") {
-                      proj.android.publishing {
-                          singleVariant("release")
-                      }
-                  }
-              }
           }
 
           gradle.afterProject { proj ->
@@ -111,6 +103,40 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Patch Gradle 9 compatibility in node_modules
+        run: |
+          node -e '
+            const fs = require("fs");
+
+            // 1. Fix unquoted org.* inside dependencies block of onnxruntime-react-native
+            const ortFile = "node_modules/onnxruntime-react-native/android/build.gradle";
+            if (fs.existsSync(ortFile)) {
+              let content = fs.readFileSync(ortFile, "utf8");
+              content = content.replace(
+                /(dependencies\s*\{[\s\S]*?\n\})/,
+                (depsBlock) => depsBlock.replace(/(?<![\x27"\w.])(org(?:\.[A-Za-z0-9_-]+)+)(?![\x27"\w.])/g, "\x27$1\x27")
+              );
+              fs.writeFileSync(ortFile, content);
+              console.log("Patched onnxruntime-react-native/android/build.gradle");
+            }
+
+            // 2. Defer components.release lookup in expo/android/build.gradle
+            const expoFiles = [
+              "node_modules/expo/android/build.gradle",
+              "node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/groovy/ExpoModulesCorePlugin.groovy"
+            ];
+            for (const f of expoFiles) {
+              if (fs.existsSync(f)) {
+                let content = fs.readFileSync(f, "utf8");
+                if (content.includes("from components.release") && !content.includes("afterEvaluate { from components.release }")) {
+                  content = content.replace(/from components\.release/g, "project.afterEvaluate { from components.release }");
+                  fs.writeFileSync(f, content);
+                  console.log("Patched " + f);
+                }
+              }
+            }
+          '
 
       - name: Extract app name & version
         id: meta
