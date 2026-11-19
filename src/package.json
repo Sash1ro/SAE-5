@@ -1,7 +1,7 @@
 {
-  "name": "src",
+  "name": "Manganitor",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "0.1",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
     "@expo/ui": "~57.0.18",
