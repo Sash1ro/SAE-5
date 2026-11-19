@@ -110,52 +110,43 @@ jobs:
           const fs = require('fs');
           const path = require('path');
 
-          // 1. Quote unquoted org.* dependencies in onnxruntime-react-native (brace-aware)
+          // 1. Replace removed org.gradle.util.VersionNumber in onnxruntime-react-native
           const ortFile = 'node_modules/onnxruntime-react-native/android/build.gradle';
           if (fs.existsSync(ortFile)) {
-            const lines = fs.readFileSync(ortFile, 'utf8').split('\n');
-            let inDeps = false;
-            let braceDepth = 0;
-            let patched = false;
+            let content = fs.readFileSync(ortFile, 'utf8');
+            if (content.includes('org.gradle.util.VersionNumber')) {
+              content = content.replace(/org\.gradle\.util\.VersionNumber/g, 'CiVersionNumber');
+              content += `
+          class CiVersionNumber implements Comparable<CiVersionNumber> {
+            int major = 0
+            int minor = 0
+            int micro = 0
 
-            const updatedLines = lines.map((line) => {
-              const trimmed = line.trim();
-              if (!inDeps && /(?:^|\.)dependencies\s*\{/.test(trimmed)) {
-                inDeps = true;
-              }
-              if (inDeps) {
-                for (const ch of line) {
-                  if (ch === '{') braceDepth++;
-                  else if (ch === '}') braceDepth--;
-                }
-                if (braceDepth <= 0) {
-                  inDeps = false;
-                }
-                if (!trimmed.startsWith('//') && !trimmed.startsWith('*') && !trimmed.startsWith('/*')) {
-                  let next = line.replace(
-                    /(?<!['"\w.-])(org(?:\.[A-Za-z0-9_-]+)+:[^\s)'"]+)/g,
-                    '"$1"'
-                  );
-                  next = next.replace(
-                    /(?<!['"\w./:-])(org(?:\.[A-Za-z0-9_-]+)+)(?!['"\w.:-])/g,
-                    "'$1'"
-                  );
-                  if (next !== line) {
-                    patched = true;
-                    return next;
-                  }
-                }
-              }
-              return line;
-            });
+            static CiVersionNumber parse(Object v) {
+              def vn = new CiVersionNumber()
+              if (v == null) return vn
+              def parts = v.toString().replaceAll('[^0-9.].*$', '').tokenize('.')
+              if (parts.size() > 0 && parts[0]) vn.major = parts[0] as int
+              if (parts.size() > 1 && parts[1]) vn.minor = parts[1] as int
+              if (parts.size() > 2 && parts[2]) vn.micro = parts[2] as int
+              return vn
+            }
 
-            if (patched) {
-              fs.writeFileSync(ortFile, updatedLines.join('\n'));
-              console.log('Patched:', ortFile);
+            int compareTo(CiVersionNumber o) {
+              int c = this.major <=> o.major
+              if (c != 0) return c
+              c = this.minor <=> o.minor
+              if (c != 0) return c
+              return this.micro <=> o.micro
+            }
+          }
+          `;
+              fs.writeFileSync(ortFile, content);
+              console.log('Patched VersionNumber in:', ortFile);
             }
           }
 
-          // 2. Guard components.release lookup in expo and expo-modules-core (.gradle & .kt)
+          // 2. Guard components["release"] / components.release in expo & expo-modules-core
           function walk(dir) {
             if (!fs.existsSync(dir)) return;
             for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -163,19 +154,33 @@ jobs:
               const full = path.join(dir, entry.name);
               if (entry.isDirectory()) {
                 walk(full);
-              } else if (/\.(gradle|kts|groovy|kt)$/.test(entry.name)) {
+              } else if (/\.(kt|kts)$/.test(entry.name)) {
                 const content = fs.readFileSync(full, 'utf8');
                 let updated = content.replace(
-                  /from\s*\(?\s*components\.release\s*\)?/g,
-                  "if (components.findByName('release') != null) { from components.release }"
+                  /from\(\s*((?:[A-Za-z_]\w*\.)?components)\s*\[\s*"release"\s*\]\s*\)/g,
+                  '$1.findByName("release")?.let { from(it) }'
                 );
                 updated = updated.replace(
-                  /from\(\s*components\.(?:getByName\("release"\)|\["release"\])\s*\)/g,
-                  'components.findByName("release")?.let { from(it) }'
+                  /from\(\s*((?:[A-Za-z_]\w*\.)?components)\.getByName\(\s*"release"\s*\)\s*\)/g,
+                  '$1.findByName("release")?.let { from(it) }'
                 );
                 if (updated !== content) {
                   fs.writeFileSync(full, updated);
-                  console.log('Patched release component in:', full);
+                  console.log('Patched Kotlin release component in:', full);
+                }
+              } else if (/\.(gradle|groovy)$/.test(entry.name)) {
+                const content = fs.readFileSync(full, 'utf8');
+                let updated = content.replace(
+                  /from\s*\(?\s*((?:[A-Za-z_]\w*\.)?components)\.release\s*\)?/g,
+                  "if ($1.findByName('release') != null) { from($1.release) }"
+                );
+                updated = updated.replace(
+                  /from\s*\(?\s*((?:[A-Za-z_]\w*\.)?components)\s*\[\s*['"]release['"]\s*\]\s*\)?/g,
+                  "if ($1.findByName('release') != null) { from($1['release']) }"
+                );
+                if (updated !== content) {
+                  fs.writeFileSync(full, updated);
+                  console.log('Patched Groovy release component in:', full);
                 }
               }
             }
