@@ -56,30 +56,53 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Configure Gradle Maven Central mirror
+      - name: Configure Gradle repositories & Expo publishing fix
         run: |
           mkdir -p ~/.gradle/init.d
-          cat << 'EOF' > ~/.gradle/init.d/maven-mirror.gradle
+          cat << 'EOF' > ~/.gradle/init.d/ci-fixes.gradle
           def mirrorUrl = "https://maven-central.storage-download.googleapis.com/maven2"
 
           gradle.settingsEvaluated { settings ->
-              settings.pluginManagement.repositories.maven {
-                  name = "GoogleMavenCentralMirror"
-                  url = uri(mirrorUrl)
+              settings.pluginManagement.repositories {
+                  gradlePluginPortal()
+                  google()
+                  maven {
+                      name = "GoogleMavenCentralMirror"
+                      url = uri(mirrorUrl)
+                  }
+                  mavenCentral()
+              }
+          }
+
+          gradle.beforeProject { proj ->
+              proj.buildscript.repositories {
+                  gradlePluginPortal()
+                  google()
+                  maven {
+                      name = "GoogleMavenCentralMirror"
+                      url = uri(mirrorUrl)
+                  }
+                  mavenCentral()
+              }
+
+              if (proj.name == "expo") {
+                  proj.plugins.withId("com.android.library") {
+                      proj.android.publishing {
+                          singleVariant("release")
+                      }
+                  }
               }
           }
 
           gradle.afterProject { proj ->
-              proj.buildscript.repositories.maven {
-                  name = "GoogleMavenCentralMirror"
-                  url = uri(mirrorUrl)
-              }
               if (!proj.repositories.isEmpty()) {
                   try {
-                      proj.repositories.maven {
+                      def mirror = proj.repositories.maven {
                           name = "GoogleMavenCentralMirror"
                           url = uri(mirrorUrl)
                       }
+                      proj.repositories.remove(mirror)
+                      proj.repositories.add(0, mirror)
                   } catch (Exception ignored) {
                   }
               }
