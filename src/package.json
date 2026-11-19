@@ -2,6 +2,7 @@
   "name": "Manganitor",
   "main": "expo-router/entry",
   "version": "0.1",
+  "onnxruntimeExtensionsEnabled": "true",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
     "@expo/ui": "~57.0.26",
@@ -52,7 +53,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "postinstall": "node -e 'const fs=require(\"fs\"); const p=\"node_modules/onnxruntime-react-native/android/build.gradle\"; if(fs.existsSync(p)){ let s=fs.readFileSync(p,\"utf8\").replace(/\\bVersionNumber\\b/g,\"org.gradle.util.VersionNumber\"); s=s.replace(/org\\.gradle\\.util\\.org\\.gradle\\.util\\.VersionNumber/g,\"org.gradle.util.VersionNumber\"); fs.writeFileSync(p,s); }'"
   },
+  
   "private": true
 }

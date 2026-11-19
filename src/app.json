@@ -8,7 +8,8 @@
     "scheme": "src",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.iut.manganitor"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,6 +41,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "73c6c84b-79b1-4592-a101-14eeb2acb26d"
+      }
     }
   }
 }
