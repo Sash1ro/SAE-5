@@ -1,0 +1,60 @@
+name: Build & Release Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read app version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version || '1.0.0'")" >> "$GITHUB_OUTPUT"
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             "app-v${{ steps.pkg.outputs.version }}-${{ github.run_number }}.apk"
+
+      - name: Create GitHub Release and upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.pkg.outputs.version }}-build.${{ github.run_number }}"
+          name: "Release v${{ steps.pkg.outputs.version }} (Build #${{ github.run_number }})"
+          generate_release_notes: true
+          files: "app-v${{ steps.pkg.outputs.version }}-${{ github.run_number }}.apk"
