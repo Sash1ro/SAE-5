@@ -46,6 +46,46 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('src/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Configure Gradle Maven Central mirror
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat << 'EOF' > ~/.gradle/init.d/maven-mirror.gradle
+          def mirrorUrl = "https://maven-central.storage-download.googleapis.com/maven2"
+
+          gradle.settingsEvaluated { settings ->
+              settings.pluginManagement.repositories.maven {
+                  name = "GoogleMavenCentralMirror"
+                  url = uri(mirrorUrl)
+              }
+          }
+
+          gradle.afterProject { proj ->
+              proj.buildscript.repositories.maven {
+                  name = "GoogleMavenCentralMirror"
+                  url = uri(mirrorUrl)
+              }
+              if (!proj.repositories.isEmpty()) {
+                  try {
+                      proj.repositories.maven {
+                          name = "GoogleMavenCentralMirror"
+                          url = uri(mirrorUrl)
+                      }
+                  } catch (Exception ignored) {
+                  }
+              }
+          }
+          EOF
+
       - name: Install dependencies
         run: npm ci
 
@@ -82,7 +122,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK
         id: rename
