@@ -32,6 +32,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
@@ -43,7 +46,9 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version || '1.0.0'")" >> "$GITHUB_OUTPUT"
 
       - name: Generate native Android project
-        run: npx expo prebuild --platform android --clean
+        run: |
+          npx expo prebuild --platform android --clean
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
       - name: Build release APK
         working-directory: src/android
