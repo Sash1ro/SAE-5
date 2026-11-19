@@ -106,37 +106,84 @@ jobs:
 
       - name: Patch Gradle 9 compatibility in node_modules
         run: |
-          node -e '
-            const fs = require("fs");
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
 
-            // 1. Fix unquoted org.* inside dependencies block of onnxruntime-react-native
-            const ortFile = "node_modules/onnxruntime-react-native/android/build.gradle";
-            if (fs.existsSync(ortFile)) {
-              let content = fs.readFileSync(ortFile, "utf8");
-              content = content.replace(
-                /(dependencies\s*\{[\s\S]*?\n\})/,
-                (depsBlock) => depsBlock.replace(/(?<![\x27"\w.])(org(?:\.[A-Za-z0-9_-]+)+)(?![\x27"\w.])/g, "\x27$1\x27")
-              );
-              fs.writeFileSync(ortFile, content);
-              console.log("Patched onnxruntime-react-native/android/build.gradle");
+          // 1. Quote unquoted org.* dependencies in onnxruntime-react-native (brace-aware)
+          const ortFile = 'node_modules/onnxruntime-react-native/android/build.gradle';
+          if (fs.existsSync(ortFile)) {
+            const lines = fs.readFileSync(ortFile, 'utf8').split('\n');
+            let inDeps = false;
+            let braceDepth = 0;
+            let patched = false;
+
+            const updatedLines = lines.map((line) => {
+              const trimmed = line.trim();
+              if (!inDeps && /(?:^|\.)dependencies\s*\{/.test(trimmed)) {
+                inDeps = true;
+              }
+              if (inDeps) {
+                for (const ch of line) {
+                  if (ch === '{') braceDepth++;
+                  else if (ch === '}') braceDepth--;
+                }
+                if (braceDepth <= 0) {
+                  inDeps = false;
+                }
+                if (!trimmed.startsWith('//') && !trimmed.startsWith('*') && !trimmed.startsWith('/*')) {
+                  let next = line.replace(
+                    /(?<!['"\w.-])(org(?:\.[A-Za-z0-9_-]+)+:[^\s)'"]+)/g,
+                    '"$1"'
+                  );
+                  next = next.replace(
+                    /(?<!['"\w./:-])(org(?:\.[A-Za-z0-9_-]+)+)(?!['"\w.:-])/g,
+                    "'$1'"
+                  );
+                  if (next !== line) {
+                    patched = true;
+                    return next;
+                  }
+                }
+              }
+              return line;
+            });
+
+            if (patched) {
+              fs.writeFileSync(ortFile, updatedLines.join('\n'));
+              console.log('Patched:', ortFile);
             }
+          }
 
-            // 2. Defer components.release lookup in expo/android/build.gradle
-            const expoFiles = [
-              "node_modules/expo/android/build.gradle",
-              "node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/groovy/ExpoModulesCorePlugin.groovy"
-            ];
-            for (const f of expoFiles) {
-              if (fs.existsSync(f)) {
-                let content = fs.readFileSync(f, "utf8");
-                if (content.includes("from components.release") && !content.includes("afterEvaluate { from components.release }")) {
-                  content = content.replace(/from components\.release/g, "project.afterEvaluate { from components.release }");
-                  fs.writeFileSync(f, content);
-                  console.log("Patched " + f);
+          // 2. Guard components.release lookup in expo and expo-modules-core (.gradle & .kt)
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (entry.name === 'node_modules' || entry.name === 'build' || entry.name === '.git') continue;
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                walk(full);
+              } else if (/\.(gradle|kts|groovy|kt)$/.test(entry.name)) {
+                const content = fs.readFileSync(full, 'utf8');
+                let updated = content.replace(
+                  /from\s*\(?\s*components\.release\s*\)?/g,
+                  "if (components.findByName('release') != null) { from components.release }"
+                );
+                updated = updated.replace(
+                  /from\(\s*components\.(?:getByName\("release"\)|\["release"\])\s*\)/g,
+                  'components.findByName("release")?.let { from(it) }'
+                );
+                if (updated !== content) {
+                  fs.writeFileSync(full, updated);
+                  console.log('Patched release component in:', full);
                 }
               }
             }
-          '
+          }
+
+          walk('node_modules/expo');
+          walk('node_modules/expo-modules-core');
+          EOF
 
       - name: Extract app name & version
         id: meta
