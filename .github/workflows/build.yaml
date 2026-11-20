@@ -65,9 +65,21 @@ jobs:
             `app_name=${name}\ntag=v${version}\napk_name=${name}-v${version}.apk\n`);
           JS
 
-      - run: npx expo prebuild --platform android --clean
+      - run: npx expo prebuild --platform android --no-install --clean
 
-      - run: ./gradlew assembleRelease
+      # Gradle 9 breaks ':expo' configuration (components["release"] removed).
+      # Gradle 8.14.x works with current Expo/RN templates and needs no patches.
+      - name: Use Gradle 8.14.3
+        run: |
+          sed -i 's#gradle-[0-9.]*-\(bin\|all\)\.zip#gradle-8.14.3-bin.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
+
+      # Prints node's real error if autolinking is broken (Gradle hides it).
+      - name: Check Expo autolinking
+        working-directory: src/android
+        run: npx expo-modules-autolinking react-native-config --json --platform android > /dev/null
+
+      - run: ./gradlew assembleRelease --no-daemon --stacktrace
         working-directory: src/android
 
       - name: Rename APK
