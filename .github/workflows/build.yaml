@@ -1,0 +1,313 @@
+name: Build & Release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Custom version (e.g. 1.0.0) — leave blank to use app.json version'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: src
+    env:
+      CI: 'true'
+      NODE_OPTIONS: '--max-old-space-size=4096'
+    outputs:
+      app_name: ${{ steps.meta.outputs.app_name }}
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      apk_name: ${{ steps.rename.outputs.apk_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/package-lock.json
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Replaces the manual cache step AND the Maven mirror init script.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      # TEMPORARY: remove this step once expo / react-native / onnxruntime-react-native
+      # are upgraded to versions that support your Gradle version.
+      # Better long-term: use patch-package and commit the patches.
+      - name: Patch Gradle 9 & Expo compatibility in node_modules
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          // 1. Fix onnxruntime-react-native: replace removed org.gradle.util.VersionNumber
+          const ortFile = 'node_modules/onnxruntime-react-native/android/build.gradle';
+          if (fs.existsSync(ortFile)) {
+            let content = fs.readFileSync(ortFile, 'utf8');
+            content = content.replace(
+              /if\s*\(\s*(?:org\.gradle\.util\.)?VersionNumber\.parse\s*\(\s*REACT_NATIVE_VERSION\s*\)\s*<\s*(?:org\.gradle\.util\.)?VersionNumber\.parse\s*\(\s*["']0\.71["']\s*\)\s*\)/g,
+              'def rnParts = REACT_NATIVE_VERSION.split("\\\\."); if (rnParts[0].toInteger() == 0 && rnParts[1].toInteger() < 71)'
+            );
+            if (content.includes('VersionNumber')) {
+              content = content.replace(/(?:org\.gradle\.util\.)?VersionNumber/g, 'CiVersionNumber');
+              content += `
+          class CiVersionNumber implements Comparable<CiVersionNumber> {
+            int major = 0
+            int minor = 0
+            int micro = 0
+
+            static CiVersionNumber parse(Object v) {
+              def vn = new CiVersionNumber()
+              if (v == null) return vn
+              def parts = v.toString().replaceAll('[^0-9.].*$', '').tokenize('.')
+              if (parts.size() > 0 && parts[0]) vn.major = parts[0] as int
+              if (parts.size() > 1 && parts[1]) vn.minor = parts[1] as int
+              if (parts.size() > 2 && parts[2]) vn.micro = parts[2] as int
+              return vn
+            }
+
+            int compareTo(CiVersionNumber o) {
+              int c = this.major <=> o.major
+              if (c != 0) return c
+              c = this.minor <=> o.minor
+              if (c != 0) return c
+              return this.micro <=> o.micro
+            }
+          }
+          `;
+            }
+            fs.writeFileSync(ortFile, content);
+            console.log('Patched onnxruntime-react-native');
+          }
+
+          // 2. Guard components["release"] / components.release in expo and expo-modules-core
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (entry.name === 'node_modules' || entry.name === 'build' || entry.name === '.git') continue;
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                walk(full);
+              } else if (/\.(kt|kts)$/.test(entry.name)) {
+                const content = fs.readFileSync(full, 'utf8');
+                let updated = content.replace(
+                  /from\(\s*((?:[A-Za-z_]\w*\.)?components)\s*\[\s*"release"\s*\]\s*\)/g,
+                  '$1.findByName("release")?.let { from(it) }'
+                );
+                updated = updated.replace(
+                  /from\(\s*((?:[A-Za-z_]\w*\.)?components)\.getByName\(\s*"release"\s*\)\s*\)/g,
+                  '$1.findByName("release")?.let { from(it) }'
+                );
+                if (updated !== content) {
+                  fs.writeFileSync(full, updated);
+                  console.log('Patched Kotlin release component in:', full);
+                }
+              } else if (/\.(gradle|groovy)$/.test(entry.name)) {
+                const content = fs.readFileSync(full, 'utf8');
+                let updated = content.replace(
+                  /from\s*\(?\s*((?:[A-Za-z_]\w*\.)?components)\.release\s*\)?/g,
+                  "if ($1.findByName('release') != null) { from($1.release) }"
+                );
+                updated = updated.replace(
+                  /from\s*\(?\s*((?:[A-Za-z_]\w*\.)?components)\s*\[\s*['"]release['"]\s*\]\s*\)?/g,
+                  "if ($1.findByName('release') != null) { from($1['release']) }"
+                );
+                if (updated !== content) {
+                  fs.writeFileSync(full, updated);
+                  console.log('Patched Groovy release component in:', full);
+                }
+              }
+            }
+          }
+
+          walk('node_modules/expo');
+          walk('node_modules/expo-modules-core');
+          console.log('Finished compatibility patches.');
+          EOF
+
+      - name: Extract app name & version
+        id: meta
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const app = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo || {};
+          const rawName = app.slug || app.name || 'app';
+          const appName = rawName.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '');
+          const configVersion = app.version || '1.0.0';
+
+          const inputVersion = process.env.INPUT_VERSION || '';
+          const refType = process.env.GITHUB_REF_TYPE || '';
+          const refName = process.env.GITHUB_REF_NAME || '';
+
+          let version = inputVersion.trim().replace(/^v/, '');
+          if (!version && refType === 'tag' && refName) {
+            version = refName.trim().replace(/^v/, '');
+          }
+          if (!version) version = configVersion;
+
+          const out = `app_name=${appName}\nversion=${version}\ntag=v${version}\n`;
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, out);
+          console.log(out);
+          EOF
+
+      # Makes the APK's real versionName match the tag / input, not just the file name.
+      - name: Apply version to app.json
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const j = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          j.expo = j.expo || {};
+          j.expo.version = process.env.APP_VERSION;
+          j.expo.android = j.expo.android || {};
+          // Unique, increasing versionCode (seconds since epoch fits in int32 until 2038)
+          j.expo.android.versionCode = Math.floor(Date.now() / 1000);
+          fs.writeFileSync('app.json', JSON.stringify(j, null, 2));
+          EOF
+
+      - name: Expo prebuild
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Show Gradle version
+        run: grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Configure Gradle memory
+        run: |
+          {
+            echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
+            echo "org.gradle.parallel=true"
+            echo "org.gradle.caching=true"
+          } >> android/gradle.properties
+
+      - name: Build release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace \
+            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      # Optional: runs only if you add the 4 secrets below.
+      # ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+      - name: Sign APK with release key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "No keystore secret set — APK keeps the default (debug) signature."
+            exit 0
+          fi
+          APK_PATH=$(find android/app/build/outputs/apk/release -maxdepth 1 -name "*.apk" | head -n 1)
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.keystore" \
+            --ks-pass env:KS_PASS \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass env:KEY_PASS \
+            "$APK_PATH"
+          "$BT/apksigner" verify --print-certs "$APK_PATH"
+          rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Rename APK
+        id: rename
+        env:
+          APP_NAME: ${{ steps.meta.outputs.app_name }}
+          APP_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          APK_DIR="android/app/build/outputs/apk/release"
+          APK_PATH=$(find "$APK_DIR" -maxdepth 1 -name "*.apk" | head -n 1)
+
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK found in $APK_DIR"
+            exit 1
+          fi
+
+          FINAL_NAME="${APP_NAME}-v${APP_VERSION}.apk"
+          cp "$APK_PATH" "$APK_DIR/$FINAL_NAME"
+          echo "apk_name=$FINAL_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: src/android/app/build/outputs/apk/release/${{ steps.rename.outputs.apk_name }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-reports
+          path: |
+            src/android/app/build/reports
+            src/android/build/reports
+          retention-days: 3
+          if-no-files-found: ignore
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: ./apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: "${{ needs.build.outputs.app_name }} ${{ needs.build.outputs.tag }}"
+          files: ./apk/${{ needs.build.outputs.apk_name }}
+          prerelease: ${{ inputs.prerelease || false }}
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
