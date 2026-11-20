@@ -207,9 +207,10 @@ export async function classifyManga(
       confidence: Math.round(bestBoxConf * 1000) / 1000,
       box: bestBox ?? undefined,
     };
+
+    await setCache(cacheKey, result);
   }
 
-  await setCache(cacheKey, result);
   return result;
 }
 

@@ -5,10 +5,12 @@ import { DEF_CONFIDENCE, DEF_SIMILARITY } from "@/services/mangaClassifier/class
 import { addToHistory, RESULT, TYPE } from "@/services/historyService";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
+import { useDetectionStore } from "@/stores/useDetectionStore";
 
 export function useMangaDetection() {
     const router = useRouter();
     const run = useAsyncAction();
+    const setDetect = useDetectionStore((s) => s.setCurrentDetection)
     const showError = useMessageStore((s) => s.showError);
 
     return async (asset: ImagePickerAsset) => {
@@ -24,6 +26,11 @@ export function useMangaDetection() {
             );
             return;
         }
+
+        setDetect({
+            ...result,
+            imageUri: asset.uri,
+        });
 
         addToHistory(
             result.universe,

@@ -11,9 +11,13 @@ import { globalStyles } from "@/theme/styles";
 import Card from "@/components/card";
 import AppText from "@/components/appText";
 import CoverImage from "@/components/coverImage";
+import { useDetectionStore } from "@/stores/useDetectionStore";
 
 export default function DetailsPage() {
   const { title, volume, mangaDetails } = useMangaFetching()
+  const { currentDetection } = useDetectionStore()
+
+  const confidence = currentDetection?.similarity ? ( currentDetection.similarity * 100) + "%" : "Unknown"
 
   return (
     <ScreenScrollView>
@@ -39,6 +43,11 @@ export default function DetailsPage() {
               <Ionicons name="person-outline" size={16} color={colors.altText} />
               <Text style={styles.author} numberOfLines={1}>
                 {mangaDetails.author ?? "Unknown Author"}
+              </Text>
+            </View>
+            <View style={styles.authorRow}>
+              <Text style={styles.author} numberOfLines={1}>
+                {"IA Confidence : " + confidence}
               </Text>
             </View>
           </View>

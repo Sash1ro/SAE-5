@@ -12,6 +12,7 @@ export type DetectionResult = {
     x2: number;
     y2: number;
   };
+  imageUri?: string;
 }
 
 interface DetectionState {
