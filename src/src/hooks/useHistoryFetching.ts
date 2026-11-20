@@ -8,6 +8,7 @@ import {
 } from "@/services/historyService";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
+import { useDetectionStore } from "@/stores/useDetectionStore";
 
 function matchesQuery(h: History, query: string): boolean {
   return (
@@ -20,6 +21,7 @@ export function useHistoryFetching() {
   const router = useRouter();
   const run = useAsyncAction();
   const showConfirm = useMessageStore((s) => s.showConfirmation);
+  const setDetect = useDetectionStore((s) => s.setCurrentDetection)
 
   const [history, setHistory] = useState<History[] | null>(null);
   const [query, setQuery] = useState("");
@@ -49,11 +51,21 @@ export function useHistoryFetching() {
     return q ? history.filter((h) => matchesQuery(h, q)) : history;
   }, [history, query]);
 
-  const openDetails = (h: History) =>
+  const openDetails = (h: History) => {
+    setDetect({
+      label: h.universe_name + "-" + h.universe_volume,
+      universe: h.universe_name,
+      tome: String(h.universe_volume),
+      confidence: h.ia_confidence,
+      similarity: h.ia_similarity,
+      imageUri: h.image_64,
+    });
+
     router.push({
       pathname: "/details",
       params: { title: h.universe_name, volume: String(h.universe_volume) },
     });
+  }
 
   const deleteEntry = async (id: string) => {
     const ok = await run(
@@ -87,7 +99,7 @@ export function useHistoryFetching() {
       },
     );
 
-    if (!ok) return; 
+    if (!ok) return;
     setHistory([]);
     setQuery("");
   };
