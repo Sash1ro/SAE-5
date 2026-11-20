@@ -209,6 +209,37 @@ jobs:
       - name: Show Gradle version
         run: grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
 
+      # Run the same node commands that Gradle's Expo autolinking plugin runs.
+      # If node fails, the REAL error is printed here instead of the opaque
+      # "Process 'command node' finished with non-zero exit value 1".
+      - name: Verify Expo autolinking (prints the real node error)
+        run: |
+          set -e
+          echo "--- versions"
+          node -v
+          npm ls expo expo-modules-autolinking react-native --depth=0 || true
+          echo "--- app config"
+          npx expo config --type public > /dev/null
+          echo "--- resolve expo"
+          node --print "require.resolve('expo/package.json')"
+          echo "--- autolinking"
+          npx expo-modules-autolinking resolve --platform android > /tmp/autolinking.json
+          head -c 500 /tmp/autolinking.json
+          echo
+          echo "--- react-native config"
+          npx react-native config > /dev/null || echo "react-native config failed (non-fatal)"
+
+      # Optional: set the repository variable GRADLE_VERSION (e.g. 8.14.3) to force
+      # the Gradle wrapper version if the one templated by prebuild is too new.
+      - name: Pin Gradle wrapper (optional)
+        env:
+          GRADLE_VERSION: ${{ vars.GRADLE_VERSION }}
+        run: |
+          if [ -n "$GRADLE_VERSION" ]; then
+            sed -i "s#gradle-[0-9.]*-\(bin\|all\)\.zip#gradle-${GRADLE_VERSION}-bin.zip#" android/gradle/wrapper/gradle-wrapper.properties
+            grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
+          fi
+
       - name: Configure Gradle memory
         run: |
           {
@@ -221,8 +252,9 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace \
-            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon --stacktrace --warning-mode all \
+            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a 2>&1 | tee "$RUNNER_TEMP/gradle.log"
 
       # Optional: runs only if you add the 4 secrets below.
       # ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
