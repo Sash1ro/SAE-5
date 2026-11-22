@@ -1,3 +1,4 @@
+import { Box } from "@/services/historyService";
 import { create } from "zustand";
 
 export type DetectionResult = {
@@ -6,12 +7,7 @@ export type DetectionResult = {
   tome: string;
   similarity: number;
   confidence: number;
-  box?: {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-  };
+  box: Box | null;
   imageUri?: string;
 }
 

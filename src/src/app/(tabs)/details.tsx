@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { colors } from "@/theme/colors";
 import { Text, View, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -11,29 +12,56 @@ import { globalStyles } from "@/theme/styles";
 import Card from "@/components/card";
 import AppText from "@/components/appText";
 import CoverImage from "@/components/coverImage";
+import IconButton from "@/components/iconButton";
 import { useDetectionStore } from "@/stores/useDetectionStore";
 
-export default function DetailsPage() {
-  const { title, volume, mangaDetails } = useMangaFetching()
-  const { currentDetection } = useDetectionStore()
+type CoverSource = "official" | "detected";
 
-  const confidence = currentDetection?.similarity ? ( currentDetection.similarity * 100) + "%" : "Unknown"
+export default function DetailsPage() {
+  const { title, volume, mangaDetails } = useMangaFetching();
+  const { currentDetection } = useDetectionStore();
+  const [coverSource, setCoverSource] = useState<CoverSource>("official");
+
+  const confidence = currentDetection?.similarity
+    ? (currentDetection.similarity * 100).toFixed(1) + "%"
+    : "Unknown";
+
+  const officialUri = mangaDetails?.volumeCoverUrl;
+  const detectedUri = currentDetection?.imageUri;
+
+  const canSwitch = !!officialUri && !!detectedUri;
+
+  const coverUri =
+    coverSource === "official"
+      ? officialUri ?? detectedUri
+      : detectedUri ?? officialUri;
+
+  const toggleCover = () =>
+    setCoverSource((prev) => (prev === "official" ? "detected" : "official"));
 
   return (
     <ScreenScrollView>
       <BackButton />
 
-      {(!title || !volume) && (
-        <EmptyState text="No Manga detected yet." />
-      )}
+      {(!title || !volume) && <EmptyState text="No Manga detected yet." />}
 
       {mangaDetails && (
         <Card>
           <View style={styles.coverWrapper}>
-            <CoverImage uri={mangaDetails.volumeCoverUrl} width={180} height={260} />
+            <View style={styles.coverBox}>
+              <CoverImage uri={coverUri} width={180} height={260} />
+              {canSwitch && (
+                <IconButton
+                  onPress={toggleCover}
+                  icon="swap-horizontal-outline"
+                  size={18}
+                  color={colors.onBg}
+                  style={styles.switchBtn}
+                />
+              )}
+            </View>
             <VolumeBadge label={`Volume ${volume}`} size="md" />
           </View>
-
 
           <View style={styles.headingBlock}>
             <Text style={styles.title} numberOfLines={3}>
@@ -54,7 +82,11 @@ export default function DetailsPage() {
 
           <View style={styles.badgeRow}>
             <Badge label={mangaDetails.type} />
-            <Badge label={mangaDetails.status} color={colors.second} icon="bookmark-outline" />
+            <Badge
+              label={mangaDetails.status}
+              color={colors.second}
+              icon="bookmark-outline"
+            />
           </View>
 
           <View style={globalStyles.divider} />
@@ -65,7 +97,6 @@ export default function DetailsPage() {
               {mangaDetails.resume || "No synopsis available."}
             </Text>
           </View>
-
         </Card>
       )}
     </ScreenScrollView>
@@ -77,15 +108,18 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  cover: {
+  coverBox: {
     width: 180,
     height: 260,
-    borderRadius: 16,
-    backgroundColor: colors.border,
   },
-  coverPlaceholder: {
-    alignItems: "center",
-    justifyContent: "center",
+  switchBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.border,
   },
   headingBlock: {
     alignItems: "center",

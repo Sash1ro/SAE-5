@@ -27,12 +27,7 @@ export function useMangaDetection() {
             return;
         }
 
-        setDetect({
-            ...result,
-            imageUri: asset.uri,
-        });
-
-        addToHistory(
+        const historyResponse = await addToHistory(
             result.universe,
             Number(result.tome),
             asset.uri,
@@ -40,9 +35,14 @@ export function useMangaDetection() {
             result.similarity,
             RESULT.SUCCESS,
             TYPE.DETECTION,
-        ).catch((e) => {
-            console.error(e);
-            showError("Failed to save detection to history.");
+            result.box, 
+        );
+
+        const annotatedUri = `data:image/jpeg;base64,${historyResponse.data.image_64}`;
+
+        setDetect({
+            ...result,
+            imageUri: annotatedUri,
         });
 
         router.push({

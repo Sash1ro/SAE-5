@@ -58,7 +58,8 @@ export function useHistoryFetching() {
       tome: String(h.universe_volume),
       confidence: h.ia_confidence,
       similarity: h.ia_similarity,
-      imageUri: h.image_64,
+      imageUri: `data:image/jpeg;base64,${h.image_64}`,
+      box: null,
     });
 
     router.push({

@@ -19,7 +19,6 @@ _request_lock = asyncio.Lock()
 _next_request_at = 0.0
 _cover_filename_pattern = re.compile(r"^[A-Za-z0-9._-]+$")
 
-
 async def _wait_for_request_slot() -> None:
     global _next_request_at
 

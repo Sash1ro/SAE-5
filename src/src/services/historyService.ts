@@ -2,6 +2,13 @@ import { apiClient } from "@/services/apiService";
 import { processImageToForm } from "@/utils/processImage";
 import { AxiosResponse } from "axios";
 
+export type Box = {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}
+
 export type History = {
     id: string,
     universe_name: string,
@@ -11,6 +18,7 @@ export type History = {
     image_64: string,
     history_type: string,
     created_at?: string;
+    box?: Box|null;
 }
 
 export enum RESULT {
@@ -38,7 +46,8 @@ const processToForm = async (
     confidence: number,
     similarity: number,
     result: string,
-    type: string): Promise<FormData> => {
+    type: string,
+    box: Box | null ): Promise<FormData> => {
     let formData = new FormData();
     formData.append("universe_name", universe.trim());
     formData.append("universe_volume", volume.toString());
@@ -46,6 +55,12 @@ const processToForm = async (
     formData.append("ia_similarity", similarity.toString());
     formData.append("history_result", result.trim());
     formData.append("history_type", type.trim());
+    if (box) {
+        formData.append("box_x1", box.x1.toString());
+        formData.append("box_y1", box.y1.toString());
+        formData.append("box_x2", box.x2.toString());
+        formData.append("box_y2", box.y2.toString());
+    }
     return await processImageToForm(formData, imageUri)
 }
 
@@ -56,8 +71,9 @@ export const addToHistory = async (
     confidence: number,
     similarity: number,
     result: string,
-    type: string): Promise<AxiosResponse> => {
-    const formData = await processToForm(name, volume, imageUri, confidence, similarity, result, type)
+    type: string,
+    box: Box | null): Promise<AxiosResponse> => {
+    const formData = await processToForm(name, volume, imageUri, confidence, similarity, result, type, box)
 
     return await apiClient.post("/user/history", formData, {
         headers: {

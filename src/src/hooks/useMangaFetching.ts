@@ -29,6 +29,7 @@ export function useMangaFetching() {
             }
             setMangaDetails(data);
         }
+        
         fetch();
 
         return () => {
