@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { getCompleteVolumeData, Manga } from "@/services/mangaFetcher";
+import { getCompleteVolumeData } from "@/services/mangaFetcher";
+import { Manga } from "@/types";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
 

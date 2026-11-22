@@ -1,11 +1,9 @@
 import { processImageToForm } from "@/utils/processImage";
 import { apiClient } from "./apiService";
 import { AxiosResponse } from "axios";
+import { ContributionResp } from "@/types";
 
-export interface ContributionResp {
-  id: string
-  status: string
-}
+export type { ContributionResp };
 
 const processToForm = async (universe: string, volume: number, imageUri: string) : Promise<FormData> => {
   let formData = new FormData();

@@ -4,7 +4,7 @@ import type * as OrtType from "onnxruntime-react-native";
 import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system/legacy";
 import jpeg from "jpeg-js";
-import { DetectionResult } from "@/stores/useDetectionStore";
+import { DetectionResult } from "@/types";
 import { getActiveIndex } from "@/services/indexSync/indexManager";
 import { getCache, setCache } from "../cacheService";
 
@@ -152,7 +152,7 @@ export async function classifyManga(
       tome,
       similarity: Math.round(bestSim * 1000) / 1000,
       confidence: Math.round(bestBoxConf * 1000) / 1000,
-      box: bestBox ?? undefined,
+      box: bestBox ?? null,
     };
   }
 

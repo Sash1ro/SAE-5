@@ -3,9 +3,9 @@ import { useFocusEffect, useRouter } from "expo-router";
 import {
   clearHistory,
   getAllHisotry,
-  History,
   removeHistory,
 } from "@/services/historyService";
+import { History } from "@/types";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
 import { useDetectionStore } from "@/stores/useDetectionStore";

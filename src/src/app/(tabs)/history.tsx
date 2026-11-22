@@ -7,7 +7,7 @@ import EmptyState from "@/components/emptyState";
 import HistoryItem from "@/components/historyItem";
 import SearchBar from "@/components/searchBar";
 import { useHistoryFetching } from "@/hooks/useHistoryFetching";
-import { History } from "@/services/historyService";
+import { History } from "@/types";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/tokens";
 

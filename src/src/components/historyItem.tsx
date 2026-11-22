@@ -4,7 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import CoverImage from "@/components/coverImage";
 import IconButton from "@/components/iconButton";
 import VolumeBadge from "@/components/volumeBadge";
-import { History } from "@/services/historyService";
+import { History } from "@/types";
 import { colors } from "@/theme/colors";
 import { formatDate } from "@/utils/utils";
 

@@ -1,20 +1,8 @@
 import { apiClient } from "@/services/apiService";
 import { AxiosResponse } from "axios";
+import { Credentials, UserPublic, AuthResp } from "@/types";
 
-export type Credentials = {
-    email : string,
-    password: string
-}
-
-export type UserPublic = {
-    id: string,
-    email: string;
-}
-
-export type AuthResp = {
-    user: UserPublic
-    token: string
-}
+export type { Credentials, UserPublic, AuthResp };
 
 export const login = async (email: string, password : string) : Promise<AxiosResponse> => {
     return await apiClient.post<AuthResp>(`/user/login`, 

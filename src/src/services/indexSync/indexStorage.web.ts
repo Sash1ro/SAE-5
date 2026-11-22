@@ -1,4 +1,4 @@
-import { IndexData } from "../mangaClassifier/classifyCore";
+import { IndexData } from "@/types";
 import { isValidIndex } from "@/utils/utils";
 
 const CACHE_NAME = "manganitor-cache";

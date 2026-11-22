@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
-import { IndexData } from "../mangaClassifier/classifyCore";
+import { IndexData } from "@/types";
 import { isValidIndex } from "@/utils/utils";
 
 const versionFile = `${FileSystem.documentDirectory}version.json`;

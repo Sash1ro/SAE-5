@@ -1,15 +1,7 @@
-import { Box } from "@/services/historyService";
 import { create } from "zustand";
+import { DetectionResult } from "@/types";
 
-export type DetectionResult = {
-  label: string;
-  universe: string;
-  tome: string;
-  similarity: number;
-  confidence: number;
-  box: Box | null;
-  imageUri?: string;
-}
+export type { DetectionResult };
 
 interface DetectionState {
   currentDetection: DetectionResult | null;

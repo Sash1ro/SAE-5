@@ -1,10 +1,9 @@
 import { create } from "zustand";
-
-type Kind = "error" | "success" | "confirm";
+import { MessageKind } from "@/types";
 
 type MessageState = {
   visible: boolean;
-  kind: Kind;
+  kind: MessageKind;
   title: string;
   message: string;
   onConfirm?: () => void;

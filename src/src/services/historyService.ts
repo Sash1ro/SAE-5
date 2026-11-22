@@ -1,35 +1,10 @@
 import { apiClient } from "@/services/apiService";
 import { processImageToForm } from "@/utils/processImage";
 import { AxiosResponse } from "axios";
+import { Box, History, RESULT, TYPE } from "@/types";
 
-export type Box = {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-}
-
-export type History = {
-    id: string,
-    universe_name: string,
-    universe_volume: number,
-    ia_similarity: number,
-    ia_confidence: number,
-    image_64: string,
-    history_type: string,
-    created_at?: string;
-    box?: Box|null;
-}
-
-export enum RESULT {
-    SUCCESS = "success",
-    FAILED = "failed",
-}
-
-export enum TYPE {
-    DETECTION = "detection",
-    CONTRIBUTION = "contribution",
-}
+export type { Box, History };
+export { RESULT, TYPE };
 
 export const getHistory = async (id: string): Promise<AxiosResponse> => {
     return await apiClient.get<History>(`/user/history/${id}`)
@@ -47,7 +22,7 @@ const processToForm = async (
     similarity: number,
     result: string,
     type: string,
-    box: Box | null ): Promise<FormData> => {
+    box?: Box | null ): Promise<FormData> => {
     let formData = new FormData();
     formData.append("universe_name", universe.trim());
     formData.append("universe_volume", volume.toString());
@@ -72,7 +47,7 @@ export const addToHistory = async (
     similarity: number,
     result: string,
     type: string,
-    box: Box | null): Promise<AxiosResponse> => {
+    box?: Box | null): Promise<AxiosResponse> => {
     const formData = await processToForm(name, volume, imageUri, confidence, similarity, result, type, box)
 
     return await apiClient.post("/user/history", formData, {

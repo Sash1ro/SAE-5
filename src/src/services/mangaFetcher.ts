@@ -22,17 +22,9 @@ const DERIVATIVE_RELATIONS = new Set(['main_story', 'based_on', 'adapted_from', 
 const VARIANT_REGEX =
     /\b(colou?red|anthology|fan ?book|spin ?off|4 ?koma|art ?book|official (guide|anthology|comic)|gaiden|side stor(y|ies)|omake|parody|doujin(shi)?|character book|data ?book|light novel|novel)\b/;
 
-export type Manga = {
-    mangaId: string;
-    title: string;
-    type: string;
-    status: string;
-    resume: string;
-    author: string;
-    tags: string[];
-    volumeCoverUrl: string | null;
-    chapters: Array<{ chapterId: string; title: string; chapter: number }> | null;
-};
+import { Manga } from '@/types';
+
+export type { Manga };
 
 function generateCacheKey(universe: string, tome: number): string {
     return formatToStub(`${CACHE_PREFIX}${universe.trim().toLowerCase()}_${tome}`);

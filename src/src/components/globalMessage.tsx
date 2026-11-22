@@ -3,11 +3,10 @@ import { useShallow } from "zustand/react/shallow";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
 import { useMessageStore } from "@/stores/useMessageStore";
+import { MessageKind } from "@/types";
 import Button from "./button";
 
-type Kind = "error" | "success" | "confirm";
-
-const THEMES: Record<Kind, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap}> = {
+const THEMES: Record<MessageKind, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap}> = {
   error: {
     color: colors.error,
     bg: "rgba(255, 59, 48, 0.1)",

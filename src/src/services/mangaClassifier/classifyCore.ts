@@ -1,16 +1,7 @@
 import { formatToStub } from "@/utils/utils";
+import { Box, IndexData } from "@/types";
 
-export interface Box {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
-export interface IndexData {
-  embeddings: number[][];
-  labels: string[];
-}
+export type { Box, IndexData };
 
 const CACHE_PREFIX = '@manga_detection_cache_';
 const IMAGENET_MEAN = [0.485, 0.456, 0.406];

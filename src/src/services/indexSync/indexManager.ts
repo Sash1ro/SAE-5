@@ -1,5 +1,5 @@
 import staticIndexData from "../../../assets/models/index_mangas.json";
-import { IndexData } from "../mangaClassifier/classifyCore";
+import { IndexData } from "@/types";
 import { getLocalVersion, updateLocalIndex, getCachedIndex } from "./indexStorage"; 
 import { SERVER_URL } from "@/utils/utils";
 

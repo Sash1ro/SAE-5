@@ -1,4 +1,4 @@
-import { IndexData } from "@/services/mangaClassifier/classifyCore";
+import { IndexData } from "@/types";
 import { Linking } from "react-native";
 
 export const SERVER_URL = "https://sae.sash1ro.fr/api"
