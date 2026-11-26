@@ -11,8 +11,6 @@
 
 Developed as part of the **SAE 5.01** project (IUT Informatique).
 
----
-
 ## Features
 
 - **Offline Edge AI Scanner**: Recognizes manga covers directly on-device using quantized ONNX models without requiring an internet connection.
@@ -22,8 +20,6 @@ Developed as part of the **SAE 5.01** project (IUT Informatique).
 - **Continuous Learning & Index Sync**: Community submissions are augmented and embedded nightly via a scheduled backend cron runner. Mobile clients sync the updated vector index over-the-air.
 - **Cross-Platform**: Built for Android, iOS, and Web with React Native and Expo Router.
 
----
-
 ## How It Works
 
 1. **Cover Detection**: YOLO11m (`yolo.onnx`) detects and crops the manga cover bounding box from the camera frame.
@@ -32,16 +28,12 @@ Developed as part of the **SAE 5.01** project (IUT Informatique).
 4. **Metadata Lookup**: Once identified, official manga information is fetched from the MangaDex API.
 5. **Nightly Retraining**: Contributed covers are augmented and re-indexed every night at 03:00 by the backend cron worker (`cron_runner.py`), making new volumes immediately searchable for all clients after an index sync.
 
----
-
 ## Tech Stack
 
 - **Mobile Client (`src/`)**: React Native 0.86, Expo 57, Expo Router, ONNX Runtime (`onnxruntime-react-native` / `onnxruntime-web`), Zustand.
 - **Backend API (`server/`)**: FastAPI, Python 3.11, Uvicorn, SQLModel / SQLAlchemy, PostgreSQL 16.
 - **Computer Vision & AI**: PyTorch, Torchvision, OpenCV (`opencv-python-headless`), Pillow, NumPy.
 - **DevOps**: Docker Compose, GitHub Actions (automated Android APK releases).
-
----
 
 ## Quick Start
 
@@ -85,8 +77,6 @@ npm run android
 npm run web
 ```
 
----
-
 ## API Overview
 
 | Method | Endpoint | Description | Auth |
@@ -102,8 +92,6 @@ npm run web
 | `GET` | `/api/index/download`| Download updated `index_mangas.json` | No |
 | `GET` | `/api/mangadex/manga/{title}` | Fetch MangaDex volume metadata | No |
 
----
-
 ## Build & CI/CD
 
 Android APK releases are built automatically via GitHub Actions (`.github/workflows/build.yaml`):
@@ -111,8 +99,6 @@ Android APK releases are built automatically via GitHub Actions (`.github/workfl
 - **Pushing a tag**: Any tag matching `v*` (e.g. `git tag v1.0.0 && git push origin v1.0.0`) triggers a build and publishes the release on GitHub.
 - **Manual trigger**: Run via the **Actions** tab in GitHub by selecting **Build & Release APK**.
 The workflow uses JDK 17, applies compatibility fixes for Gradle 9 and ONNX Runtime, and exports a standalone APK.
-
----
 
 ## Authors & Academic Context
 
