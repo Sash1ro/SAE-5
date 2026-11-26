@@ -102,5 +102,5 @@ The workflow uses JDK 17, applies compatibility fixes for Gradle 9 and ONNX Runt
 
 ## Authors & Academic Context
 
-Developed by **Matteo Plancher** and team for the **SAE 5.01** project at **IUT Informatique**.
+Developed for the **SAE 5.01** project at **IUT Informatique**.
 Manga metadata provided by [MangaDex](https://mangadex.org).
