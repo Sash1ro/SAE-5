@@ -100,7 +100,7 @@ Android APK releases are built automatically via GitHub Actions (`.github/workfl
 - **Manual trigger**: Run via the **Actions** tab in GitHub by selecting **Build & Release APK**.
 The workflow uses JDK 17, applies compatibility fixes for Gradle 9 and ONNX Runtime, and exports a standalone APK.
 
-## Authors & Academic Context
+## Authors
 
 Developed for the **SAE 5.01** project at **IUT Informatique**.
 Manga metadata provided by [MangaDex](https://mangadex.org).
