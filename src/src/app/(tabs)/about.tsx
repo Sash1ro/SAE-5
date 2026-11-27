@@ -21,17 +21,17 @@ export default function AboutScreen() {
       <Card>
         <SectionHeader icon="information-circle" title="About the App" />
         <Text style={styles.paragraph}>
-          This application uses Artificial Intelligence to instantly identify manga volumes from
-          your photos. Simply snap a picture of a cover, and let the app fetch the details and add
-          it to your collection history.
+          This application uses Artificial Intelligence to instantly identify
+          manga volumes from your photos. Simply snap a picture of a cover, and
+          let the app fetch the details and add it to your collection history.
         </Text>
       </Card>
 
       <Card>
         <SectionHeader icon="hardware-chip" title="Built With" />
         <Text style={styles.paragraph}>
-          Proudly built using modern mobile technologies to ensure a fast, native, and seamless
-          experience.
+          Proudly built using modern mobile technologies to ensure a fast,
+          native, and seamless experience.
         </Text>
         <View style={styles.techRow}>
           {TECHS.map((tech) => (
@@ -43,14 +43,21 @@ export default function AboutScreen() {
       </Card>
 
       <Card>
-        <SectionHeader icon="accessibility" title="API" iconColor={colors.error} />
+        <SectionHeader
+          icon="accessibility"
+          title="API"
+          iconColor={colors.error}
+        />
         <Text style={styles.paragraph}>
-          Manga metadata, volume information, and high-quality cover images are provided
-          by the MangaDex API.
+          Manga metadata, volume information, and high-quality cover images are
+          provided by the MangaDex API.
         </Text>
 
         <Pressable
-          style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.linkButton,
+            pressed && styles.pressed,
+          ]}
           onPress={() => openLink("https://mangadex.org")}
         >
           <Text style={styles.linkText}>Visit MangaDex.org</Text>

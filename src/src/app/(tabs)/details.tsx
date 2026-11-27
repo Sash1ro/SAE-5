@@ -33,8 +33,8 @@ export default function DetailsPage() {
 
   const coverUri =
     coverSource === "official"
-      ? officialUri ?? detectedUri
-      : detectedUri ?? officialUri;
+      ? (officialUri ?? detectedUri)
+      : (detectedUri ?? officialUri);
 
   const toggleCover = () =>
     setCoverSource((prev) => (prev === "official" ? "detected" : "official"));
@@ -68,7 +68,11 @@ export default function DetailsPage() {
               {mangaDetails.title}
             </Text>
             <View style={styles.authorRow}>
-              <Ionicons name="person-outline" size={16} color={colors.altText} />
+              <Ionicons
+                name="person-outline"
+                size={16}
+                color={colors.altText}
+              />
               <Text style={styles.author} numberOfLines={1}>
                 {mangaDetails.author ?? "Unknown Author"}
               </Text>

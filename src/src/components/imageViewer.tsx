@@ -1,11 +1,17 @@
-import { ImageSourcePropType, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '@/theme/colors';
+import {
+  ImageSourcePropType,
+  StyleProp,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
+import { Image } from "expo-image";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors } from "@/theme/colors";
 
 type Props = {
   imgSource: ImageSourcePropType | string | null;
-  containerStyle?: StyleProp<ViewStyle>
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 export default function ImageViewer({ imgSource, containerStyle }: Props) {
@@ -16,13 +22,8 @@ export default function ImageViewer({ imgSource, containerStyle }: Props) {
       </View>
 
       {imgSource !== "" && imgSource !== null && (
-        <Image
-          source={imgSource}
-          style={styles.image}
-          contentFit="cover"
-        />
+        <Image source={imgSource} style={styles.image} contentFit="cover" />
       )}
-
     </View>
   );
 }
@@ -32,16 +33,16 @@ const styles = StyleSheet.create({
     width: 320,
     height: 440,
     borderRadius: 18,
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: colors.border,
   },
   placeholder: {
     ...StyleSheet.absoluteFill,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
 });

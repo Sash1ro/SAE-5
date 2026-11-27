@@ -18,8 +18,15 @@ const SHUTTER_RING = 4;
 
 export default function ScanCamera({ onCapture }: Props) {
   const insets = useSafeAreaInsets();
-  const { camRef, isGranted, isReady, frame, onLayout, requestPermission, capture } =
-    useScanCamera(onCapture);
+  const {
+    camRef,
+    isGranted,
+    isReady,
+    frame,
+    onLayout,
+    requestPermission,
+    capture,
+  } = useScanCamera(onCapture);
 
   if (!isGranted) {
     return (

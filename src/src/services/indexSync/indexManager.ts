@@ -1,6 +1,10 @@
 import staticIndexData from "../../../assets/models/index_mangas.json";
 import { IndexData } from "@/types";
-import { getLocalVersion, updateLocalIndex, getCachedIndex } from "./indexStorage"; 
+import {
+  getLocalVersion,
+  updateLocalIndex,
+  getCachedIndex,
+} from "./indexStorage";
 import { clearCacheByPrefix } from "@/services/cacheService";
 import { DETECTION_CACHE_PREFIX } from "@/services/mangaClassifier/classifyCore";
 import { SERVER_URL } from "@/utils/utils";
@@ -20,9 +24,9 @@ export async function syncIndexWithServer(): Promise<void> {
     if (serverVersion > localVersion) {
       const newIndex = await updateLocalIndex(
         serverVersion,
-        `${SERVER_URL}/index/download`
+        `${SERVER_URL}/index/download`,
       );
-      
+
       if (newIndex) {
         memoryIndex = newIndex;
         await clearCacheByPrefix(DETECTION_CACHE_PREFIX);

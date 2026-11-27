@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import {
-    Href,
-    useGlobalSearchParams,
-    usePathname,
-    useRouter,
-    useSegments,
+  Href,
+  useGlobalSearchParams,
+  usePathname,
+  useRouter,
+  useSegments,
 } from "expo-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { syncIndexWithServer } from "@/services/indexSync/indexManager";
@@ -17,72 +17,72 @@ import { useAsyncAction } from "./useAsyncAction";
 type Params = Record<string, string | string[] | undefined>;
 
 function buildRoute(pathname: string, params: Params): string {
-    const search = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-        const v = Array.isArray(value) ? value[0] : value;
-        if (v) search.append(key, v);
-    }
-    const query = search.toString();
-    return query ? `${pathname}?${query}` : pathname;
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const v = Array.isArray(value) ? value[0] : value;
+    if (v) search.append(key, v);
+  }
+  const query = search.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 function useSessionCheck() {
-    const run = useAsyncAction();
-    const setIsLoggedIn = useAuthStore((s) => s.setIsLoggedIn);
-    const [isChecking, setIsChecking] = useState(true);
+  const run = useAsyncAction();
+  const setIsLoggedIn = useAuthStore((s) => s.setIsLoggedIn);
+  const [isChecking, setIsChecking] = useState(true);
 
-    useEffect(() => {
-        pruneExpiredCache();
-        run(() => syncIndexWithServer(), { useLoading: false });
-        if (Platform.OS !== "web") {
-            initModels().catch(() => {});
-        }
+  useEffect(() => {
+    pruneExpiredCache();
+    run(() => syncIndexWithServer(), { useLoading: false });
+    if (Platform.OS !== "web") {
+      initModels().catch(() => {});
+    }
 
-        const check = async () => {
-            const ok = await run(
-                async () => {
-                    await me();
-                    return true;
-                },
-                { loadingText: "Loading session" }
-            );
+    const check = async () => {
+      const ok = await run(
+        async () => {
+          await me();
+          return true;
+        },
+        { loadingText: "Loading session" },
+      );
 
-            setIsLoggedIn(Boolean(ok));
-            setIsChecking(false);
-        }
+      setIsLoggedIn(Boolean(ok));
+      setIsChecking(false);
+    };
 
-        check();
-    }, [run, setIsLoggedIn]);
+    check();
+  }, [run, setIsLoggedIn]);
 
-    return isChecking;
+  return isChecking;
 }
 
 function useAuthRedirect(enabled: boolean) {
-    const router = useRouter();
-    const segments = useSegments();
-    const pathname = usePathname();
-    const params = useGlobalSearchParams();
-    const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-    const intendedRoute = useRef<string | null>(null);
+  const router = useRouter();
+  const segments = useSegments();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const intendedRoute = useRef<string | null>(null);
 
-    useEffect(() => {
-        if (!enabled) return;
+  useEffect(() => {
+    if (!enabled) return;
 
-        const inAuthGroup = segments[0] === "(auth)";
+    const inAuthGroup = segments[0] === "(auth)";
 
-        if (!isLoggedIn && !inAuthGroup) {
-            intendedRoute.current = buildRoute(pathname, params);
-            router.replace("/(auth)/login");
-        } else if (isLoggedIn && inAuthGroup) {
-            const target = intendedRoute.current ?? "/(tabs)";
-            intendedRoute.current = null;
-            router.replace(target as Href);
-        }
-    }, [enabled, isLoggedIn, segments, pathname, params, router]);
+    if (!isLoggedIn && !inAuthGroup) {
+      intendedRoute.current = buildRoute(pathname, params);
+      router.replace("/(auth)/login");
+    } else if (isLoggedIn && inAuthGroup) {
+      const target = intendedRoute.current ?? "/(tabs)";
+      intendedRoute.current = null;
+      router.replace(target as Href);
+    }
+  }, [enabled, isLoggedIn, segments, pathname, params, router]);
 }
 
 export function useAppInit() {
-    const isChecking = useSessionCheck();
-    useAuthRedirect(!isChecking);
-    return { isReady: !isChecking };
+  const isChecking = useSessionCheck();
+  useAuthRedirect(!isChecking);
+  return { isReady: !isChecking };
 }

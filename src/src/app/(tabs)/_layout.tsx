@@ -17,9 +17,21 @@ const tabIcon =
 
 const TABS = [
   { name: "index", title: "Home", icon: tabIcon("home-sharp", "home-outline") },
-  { name: "contribute", title: "Contribute", icon: tabIcon("cloud-upload", "cloud-upload-outline") },
-  { name: "history", title: "History", icon: tabIcon("archive", "archive-outline") },
-  { name: "about", title: "About", icon: tabIcon("information-circle", "information-circle-outline") },
+  {
+    name: "contribute",
+    title: "Contribute",
+    icon: tabIcon("cloud-upload", "cloud-upload-outline"),
+  },
+  {
+    name: "history",
+    title: "History",
+    icon: tabIcon("archive", "archive-outline"),
+  },
+  {
+    name: "about",
+    title: "About",
+    icon: tabIcon("information-circle", "information-circle-outline"),
+  },
 ];
 
 const flatBar = {
@@ -42,12 +54,26 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.main,
         tabBarInactiveTintColor: colors.placeHolder,
-        tabBarStyle: { ...flatBar, borderTopColor: colors.border, borderTopWidth: 1 },
-        headerStyle: { ...flatBar, borderBottomColor: colors.border, borderBottomWidth: 1 },
+        tabBarStyle: {
+          ...flatBar,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        headerStyle: {
+          ...flatBar,
+          borderBottomColor: colors.border,
+          borderBottomWidth: 1,
+        },
         headerTintColor: colors.onBg,
         headerRight: () => (
           <View style={styles.logout}>
-            <Button label="Logout" fun={logout} small alt icon="log-out-outline" />
+            <Button
+              label="Logout"
+              fun={logout}
+              small
+              alt
+              icon="log-out-outline"
+            />
           </View>
         ),
       }}
@@ -62,7 +88,10 @@ export default function TabLayout() {
 
       {/* Hidden tabs */}
       <Tabs.Screen name="details" options={{ href: null, title: "Details" }} />
-      <Tabs.Screen name="camera" options={{ href: null, title: "Details", headerShown: false }} />
+      <Tabs.Screen
+        name="camera"
+        options={{ href: null, title: "Details", headerShown: false }}
+      />
     </Tabs>
   );
 }

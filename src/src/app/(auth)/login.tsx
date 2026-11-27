@@ -10,8 +10,16 @@ import { useAuthForm } from "@/hooks/useAuthForm";
 
 export default function LoginScreen() {
   const {
-    isSignup, email, pwd, confPwd, error,
-    setEmail, setPwd, setConfPwd, submit, toggleMode,
+    isSignup,
+    email,
+    pwd,
+    confPwd,
+    error,
+    setEmail,
+    setPwd,
+    setConfPwd,
+    submit,
+    toggleMode,
   } = useAuthForm();
 
   return (
@@ -85,7 +93,7 @@ const styles = StyleSheet.create({
   content: {
     justifyContent: "center",
     alignItems: "center",
-    gap: spacing.xl, 
+    gap: spacing.xl,
     paddingHorizontal: spacing.lg,
   },
   title: {

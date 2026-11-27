@@ -1,5 +1,11 @@
 import { useCallback } from "react";
-import { FlatList, ListRenderItem, RefreshControl, StyleSheet, View } from "react-native";
+import {
+  FlatList,
+  ListRenderItem,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
 import Button from "@/components/button";
 import Card from "@/components/card";
 import CardHeader from "@/components/cardHeader";
@@ -13,12 +19,21 @@ import { spacing } from "@/theme/tokens";
 
 export default function HistoryPage() {
   const {
-    history, hasHistory, isRefreshing, refreshHistory, query, setQuery,
-    handleDelete, handleFetch, handleClearAll,
+    history,
+    hasHistory,
+    isRefreshing,
+    refreshHistory,
+    query,
+    setQuery,
+    handleDelete,
+    handleFetch,
+    handleClearAll,
   } = useHistoryFetching();
 
   const renderItem: ListRenderItem<History> = useCallback(
-    ({ item }) => <HistoryItem item={item} onDelete={handleDelete} onOpen={handleFetch} />,
+    ({ item }) => (
+      <HistoryItem item={item} onDelete={handleDelete} onOpen={handleFetch} />
+    ),
     [handleDelete, handleFetch],
   );
 
@@ -35,9 +50,22 @@ export default function HistoryPage() {
       <Card style={styles.card}>
         <CardHeader
           title="History"
-          action={<Button label="Clear all" fun={handleClearAll} icon="trash-outline" small alt danger />}
+          action={
+            <Button
+              label="Clear all"
+              fun={handleClearAll}
+              icon="trash-outline"
+              small
+              alt
+              danger
+            />
+          }
         >
-          <SearchBar value={query} onChangeText={setQuery} placeholder="Search by title or volume" />
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search by title or volume"
+          />
         </CardHeader>
 
         <FlatList
@@ -55,7 +83,9 @@ export default function HistoryPage() {
               tintColor={colors.main}
             />
           }
-          ListEmptyComponent={<EmptyState text={`No results for "${query.trim()}"`} />}
+          ListEmptyComponent={
+            <EmptyState text={`No results for "${query.trim()}"`} />
+          }
         />
       </Card>
     </View>

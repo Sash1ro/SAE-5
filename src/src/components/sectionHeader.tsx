@@ -8,7 +8,11 @@ type Props = {
   iconColor?: string;
 };
 
-export default function SectionHeader({ icon, title, iconColor = colors.main }: Props) {
+export default function SectionHeader({
+  icon,
+  title,
+  iconColor = colors.main,
+}: Props) {
   return (
     <View style={styles.row}>
       <Ionicons name={icon} size={24} color={iconColor} />

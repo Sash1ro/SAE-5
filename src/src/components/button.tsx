@@ -1,4 +1,10 @@
-import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
 import { useLoadingStore } from "@/stores/useLoadingStore";
@@ -48,11 +54,7 @@ export default function Button({
       ]}
     >
       {icon && (
-        <Ionicons
-          name={icon}
-          size={small ? 18 : 20}
-          color={colors.onMain}
-        />
+        <Ionicons name={icon} size={small ? 18 : 20} color={colors.onMain} />
       )}
       {label && (
         <Text style={[styles.label, small && styles.labelSm]} numberOfLines={1}>

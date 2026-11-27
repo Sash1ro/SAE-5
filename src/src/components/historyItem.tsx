@@ -35,7 +35,9 @@ function HistoryItem({ item: h, onDelete, onOpen }: Props) {
             size={12}
             color={colors.altText}
           />
-          <Text style={styles.metaText}>{isDetection ? "Detection" : "Contribution"}</Text>
+          <Text style={styles.metaText}>
+            {isDetection ? "Detection" : "Contribution"}
+          </Text>
           {h.created_at ? (
             <>
               <Text style={styles.metaDot}>•</Text>

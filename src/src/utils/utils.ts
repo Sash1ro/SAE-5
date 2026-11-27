@@ -1,7 +1,7 @@
 import { IndexData } from "@/types";
 import { Linking } from "react-native";
 
-export const SERVER_URL = "https://sae.sash1ro.fr/api"
+export const SERVER_URL = "https://sae.sash1ro.fr/api";
 
 export function isValidIndex(data: any): data is IndexData {
   return !!data && Array.isArray(data.labels) && Array.isArray(data.embeddings);
@@ -18,5 +18,9 @@ export const openLink = (url: string) => {
 export const formatDate = (dateString?: string) => {
   if (!dateString) return "";
   const date = new Date(dateString);
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };

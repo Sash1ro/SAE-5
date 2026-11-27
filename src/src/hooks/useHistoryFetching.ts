@@ -63,10 +63,7 @@ export function useHistoryFetching() {
     }, [hasLoaded, fetchHistory]),
   );
 
-  const refreshHistory = useCallback(
-    () => fetchHistory(true),
-    [fetchHistory],
-  );
+  const refreshHistory = useCallback(() => fetchHistory(true), [fetchHistory]);
 
   const filteredHistory = useMemo(() => {
     if (!history) return [];

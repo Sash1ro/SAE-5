@@ -14,7 +14,10 @@ export default function BackButton() {
           <Pressable
             onPress={() => router.back()}
             hitSlop={15}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
           >
             <Ionicons name="arrow-back" size={24} color={colors.placeHolder} />
           </Pressable>

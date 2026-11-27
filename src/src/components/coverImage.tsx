@@ -25,7 +25,11 @@ export default function CoverImage({
   if (!uri) {
     return (
       <View style={[styles.base, styles.placeholder, size, style]}>
-        <Ionicons name="book-outline" size={iconSize} color={colors.placeHolder} />
+        <Ionicons
+          name="book-outline"
+          size={iconSize}
+          color={colors.placeHolder}
+        />
       </View>
     );
   }

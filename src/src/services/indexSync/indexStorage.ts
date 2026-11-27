@@ -16,12 +16,18 @@ export async function getLocalVersion(): Promise<number> {
   }
 }
 
-export async function updateLocalIndex(version: number, url: string): Promise<IndexData | null> {
+export async function updateLocalIndex(
+  version: number,
+  url: string,
+): Promise<IndexData | null> {
   try {
     const downloadRes = await FileSystem.downloadAsync(url, indexFile);
     if (downloadRes.status !== 200) return null;
 
-    await FileSystem.writeAsStringAsync(versionFile, JSON.stringify({ version }));
+    await FileSystem.writeAsStringAsync(
+      versionFile,
+      JSON.stringify({ version }),
+    );
     const content = await FileSystem.readAsStringAsync(indexFile);
     const data = JSON.parse(content);
 

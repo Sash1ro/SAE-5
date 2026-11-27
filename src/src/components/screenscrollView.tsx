@@ -58,7 +58,10 @@ export default function ScreenScrollView({
   );
 
   return (
-    <SafeAreaView style={[styles.flexFill, { backgroundColor }]} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={[styles.flexFill, { backgroundColor }]}
+      edges={["top", "bottom"]}
+    >
       {content}
     </SafeAreaView>
   );

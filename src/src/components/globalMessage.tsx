@@ -6,7 +6,10 @@ import { useMessageStore } from "@/stores/useMessageStore";
 import { MessageKind } from "@/types";
 import Button from "./button";
 
-const THEMES: Record<MessageKind, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap}> = {
+const THEMES: Record<
+  MessageKind,
+  { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
   error: {
     color: colors.error,
     bg: "rgba(255, 59, 48, 0.1)",

@@ -16,8 +16,14 @@ export const cropToFrame = async (
 
   const originX = Math.max(0, Math.round((frame.x + offsetX) / scale));
   const originY = Math.max(0, Math.round((frame.y + offsetY) / scale));
-  const width = Math.min(photo.width - originX, Math.round(frame.width / scale));
-  const height = Math.min(photo.height - originY, Math.round(frame.height / scale));
+  const width = Math.min(
+    photo.width - originX,
+    Math.round(frame.width / scale),
+  );
+  const height = Math.min(
+    photo.height - originY,
+    Math.round(frame.height / scale),
+  );
 
   const cropped = await ImageManipulator.manipulateAsync(
     photo.uri,

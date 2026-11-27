@@ -8,7 +8,11 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-export default function EmptyState({ text, icon = "albums-outline", style }: Props) {
+export default function EmptyState({
+  text,
+  icon = "albums-outline",
+  style,
+}: Props) {
   return (
     <View style={[styles.container, style]}>
       <Ionicons name={icon} size={48} color={colors.placeHolder} />

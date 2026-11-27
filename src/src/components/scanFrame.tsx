@@ -16,7 +16,9 @@ export default function ScanFrame({ frame }: Props) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <View style={[styles.dim, { top: 0, left: 0, right: 0, height: y }]} />
-      <View style={[styles.dim, { top: y + height, left: 0, right: 0, bottom: 0 }]} />
+      <View
+        style={[styles.dim, { top: y + height, left: 0, right: 0, bottom: 0 }]}
+      />
       <View style={[styles.dim, { top: y, left: 0, width: x, height }]} />
       <View style={[styles.dim, { top: y, right: 0, width: x, height }]} />
 

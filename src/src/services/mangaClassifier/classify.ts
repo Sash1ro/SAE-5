@@ -18,10 +18,9 @@ import {
   findBestMatch,
   generateDetectionCacheKey,
   DEF_CONFIDENCE,
-  DEF_SIMILARITY
+  DEF_SIMILARITY,
 } from "./classifyCore";
 import { ImagePickerAsset } from "expo-image-picker";
-
 
 const MAX_IMAGE_DIMENSION = 640;
 
@@ -36,7 +35,9 @@ async function loadModel(assetRequire: any): Promise<string> {
   return asset.localUri || asset.uri;
 }
 
-async function loadSession(assetRequire: any): Promise<OrtType.InferenceSession> {
+async function loadSession(
+  assetRequire: any,
+): Promise<OrtType.InferenceSession> {
   const uri = await loadModel(assetRequire);
   return ort!.InferenceSession.create(uri, {
     graphOptimizationLevel: "all",
@@ -108,7 +109,12 @@ export async function classifyManga(
   minSimilarity: number = DEF_SIMILARITY,
 ): Promise<DetectionResult | null> {
   const indexVersion = await getLocalVersion();
-  const cacheKey = generateDetectionCacheKey(image, minConfidence, minSimilarity, indexVersion);
+  const cacheKey = generateDetectionCacheKey(
+    image,
+    minConfidence,
+    minSimilarity,
+    indexVersion,
+  );
 
   const cached = await getCache<DetectionResult | null>(cacheKey);
   if (cached.found) {

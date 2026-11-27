@@ -13,7 +13,7 @@ import {
   findBestMatch,
   generateDetectionCacheKey,
   DEF_CONFIDENCE,
-  DEF_SIMILARITY
+  DEF_SIMILARITY,
 } from "./classifyCore";
 import { ImagePickerAsset } from "expo-image-picker";
 
@@ -78,7 +78,8 @@ export function initModels(): Promise<void> {
 
     [yoloSession, dinov2Session] = await Promise.all([
       yoloSession ?? create(require("../../../assets/models/yolo.onnx")),
-      dinov2Session ?? create(require("../../../assets/models/dinov2_int8.onnx")),
+      dinov2Session ??
+        create(require("../../../assets/models/dinov2_int8.onnx")),
     ]);
   })().catch((e) => {
     initPromise = null;
@@ -123,7 +124,12 @@ export async function classifyManga(
 ): Promise<DetectionResult | null> {
   const imageUri = image.uri;
   const indexVersion = await getLocalVersion();
-  const cacheKey = generateDetectionCacheKey(image, minConfidence, minSimilarity, indexVersion);
+  const cacheKey = generateDetectionCacheKey(
+    image,
+    minConfidence,
+    minSimilarity,
+    indexVersion,
+  );
 
   const cached = await getCache<DetectionResult | null>(cacheKey);
   if (cached.found) {

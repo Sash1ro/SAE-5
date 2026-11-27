@@ -10,7 +10,8 @@ import { layout } from "@/theme/tokens";
 const IS_MOBILE = Platform.OS !== "web";
 
 export default function Index() {
-  const { asset, hasImage, pickFromLibrary, takePicture, clear } = useImageSelection();
+  const { asset, hasImage, pickFromLibrary, takePicture, clear } =
+    useImageSelection();
   const detect = useMangaDetection();
 
   return (
@@ -19,10 +20,18 @@ export default function Index() {
       <ImageViewer imgSource={asset?.uri ?? null} />
 
       <ButtonGroup maxWidth={layout.formMaxWidth}>
-        {hasImage && <Button label="Remove Photo" fun={clear} icon="trash-bin" danger />}
-        {hasImage && <Button label="Fetch data" fun={() => detect(asset!)} icon="search" />}
-        {!hasImage && <Button label="Select Image" fun={pickFromLibrary} icon="images" />}
-        {!hasImage && IS_MOBILE && <Button label="Take Photo" alt fun={takePicture} icon="aperture" />}
+        {hasImage && (
+          <Button label="Remove Photo" fun={clear} icon="trash-bin" danger />
+        )}
+        {hasImage && (
+          <Button label="Fetch data" fun={() => detect(asset!)} icon="search" />
+        )}
+        {!hasImage && (
+          <Button label="Select Image" fun={pickFromLibrary} icon="images" />
+        )}
+        {!hasImage && IS_MOBILE && (
+          <Button label="Take Photo" alt fun={takePicture} icon="aperture" />
+        )}
       </ButtonGroup>
 
       <View style={styles.flexSpacer} />

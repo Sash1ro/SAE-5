@@ -11,9 +11,12 @@ export async function getLocalVersion(): Promise<number> {
   return val ? parseInt(val, 10) : 0;
 }
 
-export async function updateLocalIndex(version: number, url: string): Promise<IndexData | null> {
+export async function updateLocalIndex(
+  version: number,
+  url: string,
+): Promise<IndexData | null> {
   if (typeof window === "undefined") return null;
-  
+
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
@@ -27,11 +30,11 @@ export async function updateLocalIndex(version: number, url: string): Promise<In
         INDEX_PATH,
         new Response(JSON.stringify(data), {
           headers: { "Content-Type": "application/json" },
-        })
+        }),
       );
     }
     localStorage.setItem(VERSION_KEY, version.toString());
-    
+
     return data;
   } catch {
     return null;
@@ -40,7 +43,7 @@ export async function updateLocalIndex(version: number, url: string): Promise<In
 
 export async function getCachedIndex(): Promise<IndexData | null> {
   if (typeof window === "undefined" || !("caches" in window)) return null;
-  
+
   try {
     const cache = await caches.open(CACHE_NAME);
     const cachedRes = await cache.match(INDEX_PATH);

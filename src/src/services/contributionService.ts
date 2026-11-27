@@ -5,19 +5,27 @@ import { ContributionResp } from "@/types";
 
 export type { ContributionResp };
 
-const processToForm = async (universe: string, volume: number, imageUri: string) : Promise<FormData> => {
+const processToForm = async (
+  universe: string,
+  volume: number,
+  imageUri: string,
+): Promise<FormData> => {
   let formData = new FormData();
   formData.append("universe_name", universe.trim());
   formData.append("universe_volume", volume.toString());
-  return await processImageToForm(formData, imageUri)
-}
+  return await processImageToForm(formData, imageUri);
+};
 
-export const uploadToContribute = async (universe: string, volume: number, imageUri: string): Promise<AxiosResponse> =>  {
-  const formData = await processToForm(universe, volume, imageUri)
+export const uploadToContribute = async (
+  universe: string,
+  volume: number,
+  imageUri: string,
+): Promise<AxiosResponse> => {
+  const formData = await processToForm(universe, volume, imageUri);
 
   return await apiClient.post<ContributionResp>("/contributions", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
-  })
-}
+  });
+};

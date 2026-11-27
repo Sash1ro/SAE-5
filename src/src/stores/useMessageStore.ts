@@ -12,7 +12,7 @@ type MessageState = {
   showMessage: (msg?: string, title?: string) => void;
   showConfirmation: (msg: string, title: string, onConfirm: () => void) => void;
   hide: () => void;
-}
+};
 
 export const useMessageStore = create<MessageState>((set) => ({
   visible: false,
@@ -25,7 +25,13 @@ export const useMessageStore = create<MessageState>((set) => ({
     set({ visible: true, kind: "error", title, message, onConfirm: undefined }),
 
   showMessage: (message = "", title = "Success") =>
-    set({ visible: true, kind: "success", title, message, onConfirm: undefined }),
+    set({
+      visible: true,
+      kind: "success",
+      title,
+      message,
+      onConfirm: undefined,
+    }),
 
   showConfirmation: (message, title, onConfirm) =>
     set({ visible: true, kind: "confirm", title, message, onConfirm }),

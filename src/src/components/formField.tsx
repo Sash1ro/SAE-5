@@ -1,4 +1,10 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+} from "react-native";
 import { colors } from "@/theme/colors";
 
 type Props = TextInputProps & {
