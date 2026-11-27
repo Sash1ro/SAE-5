@@ -16,6 +16,7 @@ const light = {
   error: '#ef4444', 
   success: "rgb(61, 213, 135)",
   subtle: "rgba(0, 0, 0, 0.05)",
+  scrim: "rgba(0, 0, 0, 0.55)",
 };
 
 const dark = {
@@ -31,6 +32,7 @@ const dark = {
   error: '#ef4444', 
   success: "rgb(61, 213, 135)",
   subtle: "rgba(255, 255, 255, 0.06)",
+  scrim: "rgba(0, 0, 0, 0.55)",
 };
 
 export const colors = isDark ? dark : light

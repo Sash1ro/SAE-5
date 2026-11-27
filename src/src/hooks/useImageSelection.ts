@@ -9,8 +9,10 @@ export function useImageSelection() {
   const run = useAsyncAction();
 
   const select = async (source: "library" | "camera") => {
-    const picked = await run(source === "library" ? pickImage : takePhoto, {
-      loadingText: source === "library" ? "Loading image..." : "Loading photo...",
+    const isLibrary = source === "library";
+    const picked = await run(isLibrary ? pickImage : takePhoto, {
+      useLoading: isLibrary,
+      loadingText: "Loading image...",
       errorMessage: "Error while uploading image, please try again.",
     });
     if (picked) setAsset(picked);

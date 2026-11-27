@@ -1,9 +1,12 @@
 import * as ImagePicker from "expo-image-picker";
+import { Camera } from "expo-camera";
+import { router } from "expo-router";
 import { Alert } from "react-native";
+import { waitForCapture } from "@/services/cameraBridge";
 
 export const takePhoto =
   async (): Promise<ImagePicker.ImagePickerAsset | null> => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    const permissionResult = await Camera.requestCameraPermissionsAsync();
 
     if (!permissionResult.granted) {
       Alert.alert(
@@ -13,15 +16,7 @@ export const takePhoto =
       return null;
     }
 
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: false,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      return result.assets[0];
-    }
-
-    return null;
+    const capture = waitForCapture();
+    router.push("/camera");
+    return capture;
   };

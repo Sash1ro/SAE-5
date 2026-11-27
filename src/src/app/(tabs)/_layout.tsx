@@ -62,6 +62,7 @@ export default function TabLayout() {
 
       {/* Hidden tabs */}
       <Tabs.Screen name="details" options={{ href: null, title: "Details" }} />
+      <Tabs.Screen name="camera" options={{ href: null, title: "Details", headerShown: false }} />
     </Tabs>
   );
 }
