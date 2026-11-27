@@ -11,6 +11,8 @@
 
 Developed as part of the **SAE 5.01** project (IUT Informatique).
 
+[Access Manganitor here](https://sash1ro.github.io/Manganitor)
+
 ## Features
 
 - **Offline Edge AI Scanner**: Recognizes manga covers directly on-device using quantized ONNX models without requiring an internet connection.
