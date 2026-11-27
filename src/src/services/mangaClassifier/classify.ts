@@ -36,6 +36,14 @@ async function loadModel(assetRequire: any): Promise<string> {
   return asset.localUri || asset.uri;
 }
 
+async function loadSession(assetRequire: any): Promise<OrtType.InferenceSession> {
+  const uri = await loadModel(assetRequire);
+  return ort!.InferenceSession.create(uri, {
+    graphOptimizationLevel: "all",
+    intraOpNumThreads: 4,
+  });
+}
+
 export async function initModels(): Promise<void> {
   if (Platform.OS === "web") {
     throw new Error(
@@ -47,28 +55,16 @@ export async function initModels(): Promise<void> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    try {
-      if (!ort) {
-        ort = require("onnxruntime-react-native");
-      }
-
-      if (!yoloSession) {
-        const yoloUri = await loadModel(
-          require("../../../assets/models/yolo.onnx"),
-        );
-        yoloSession = await ort!.InferenceSession.create(yoloUri);
-      }
-      if (!dinov2Session) {
-        const dinoUri = await loadModel(
-          require("../../../assets/models/dinov2_int8.onnx"),
-        );
-        dinov2Session = await ort!.InferenceSession.create(dinoUri);
-      }
-    } catch (error) {
-      initPromise = null;
-      throw error;
-    }
-  })();
+    ort ??= require("onnxruntime-react-native");
+    [yoloSession, dinov2Session] = await Promise.all([
+      yoloSession ?? loadSession(require("../../../assets/models/yolo.onnx")),
+      dinov2Session ??
+        loadSession(require("../../../assets/models/dinov2_int8.onnx")),
+    ]);
+  })().catch((error) => {
+    initPromise = null;
+    throw error;
+  });
 
   return initPromise;
 }
@@ -119,13 +115,14 @@ export async function classifyManga(
     return cached.data;
   }
 
-  await initModels();
-
-  const normalizedUri = await normalizeImage(image);
-
-  const [img, activeIndex] = await Promise.all([
-    getImagePixels(normalizedUri),
+  const [{ img, normalizedUri }, activeIndex] = await Promise.all([
+    (async () => {
+      const normalizedUri = await normalizeImage(image);
+      const img = await getImagePixels(normalizedUri);
+      return { img, normalizedUri };
+    })(),
     getActiveIndex(),
+    initModels(),
   ]);
 
   const yoloTensorData = resizeAndNormalize(

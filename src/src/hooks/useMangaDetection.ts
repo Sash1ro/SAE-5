@@ -32,26 +32,25 @@ export function useMangaDetection() {
 
         let imageUri = result.imageUri ?? asset.uri;
 
-        try {
-            const historyResponse = await addToHistory(
-                result.universe,
-                Number(result.tome),
-                asset.uri,
-                result.confidence,
-                result.similarity,
-                RESULT.SUCCESS,
-                TYPE.DETECTION,
-                result.box,
-            );
+        const historyResult = await run(() => addToHistory(
+            result.universe,
+            Number(result.tome),
+            imageUri,
+            result.confidence,
+            result.similarity,
+            RESULT.SUCCESS,
+            TYPE.DETECTION,
+            result.box,
+        ), {
+            loadingText: "Loading result...",
+            errorMessage: "Error while loading the result, please try again.",
+        })
 
-            if (historyResponse.data) {
-                prependHistory(historyResponse.data);
-                if (historyResponse.data.image_64) {
-                    imageUri = `data:image/jpeg;base64,${historyResponse.data.image_64}`;
-                }
+        if (historyResult?.data) {
+            prependHistory(historyResult.data);
+            if (historyResult.data.image_64) {
+                imageUri = `data:image/jpeg;base64,${historyResult.data.image_64}`;
             }
-        } catch {
-            // Keep offline detection working even if history sync fails
         }
 
         setDetect({

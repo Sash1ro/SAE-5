@@ -17,54 +17,49 @@ import {
 } from "./classifyCore";
 import { ImagePickerAsset } from "expo-image-picker";
 
-let ort: typeof OrtType | null = null;
+const ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/";
+const MAX_IMAGE_DIMENSION = 640;
+
 let yoloSession: OrtType.InferenceSession | null = null;
 let dinov2Session: OrtType.InferenceSession | null = null;
+let ortPromise: Promise<typeof OrtType> | null = null;
+let initPromise: Promise<void> | null = null;
 
-async function getOrt(): Promise<typeof OrtType> {
-  if (ort) return ort;
-  if (typeof window !== "undefined" && (window as any).ort) {
-    ort = (window as any).ort;
-    return ort!;
-  }
+function configureOrt(o: typeof OrtType): typeof OrtType {
+  o.env.wasm.wasmPaths = ORT_BASE;
+  o.env.wasm.numThreads = (window as any).crossOriginIsolated
+    ? Math.min(4, navigator.hardwareConcurrency || 1)
+    : 1;
+  return o;
+}
+
+function loadOrt(): Promise<typeof OrtType> {
+  const w = window as any;
+  if (w.ort) return Promise.resolve(configureOrt(w.ort));
 
   return new Promise((resolve, reject) => {
-    const existingScript = document.querySelector(
-      'script[src*="onnxruntime-web"]',
-    );
-    if (existingScript) {
-      existingScript.addEventListener("load", () => {
-        ort = (window as any).ort;
-        resolve(ort!);
-      });
-      existingScript.addEventListener("error", () => {
-        reject(new Error("Error while loading onnxruntime-web script."));
-      });
-      return;
-    }
-
     const script = document.createElement("script");
-    script.src =
-      "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.min.js";
+    script.src = ORT_BASE + "ort.min.js";
     script.async = true;
     script.onload = () => {
-      ort = (window as any).ort;
-      if (ort) {
-        ort.env.wasm.wasmPaths =
-          "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/";
-        ort.env.wasm.numThreads = 1;
-        resolve(ort);
+      if (w.ort) {
+        resolve(configureOrt(w.ort));
       } else {
         reject(new Error("unable to find onnxruntime-web on window.ort."));
       }
     };
     script.onerror = () => {
-      reject(
-        new Error("Impossible to download onnxruntime-web from CDN."),
-      );
+      reject(new Error("Impossible to download onnxruntime-web from CDN."));
     };
     document.head.appendChild(script);
   });
+}
+
+function getOrt(): Promise<typeof OrtType> {
+  return (ortPromise ??= loadOrt().catch((e) => {
+    ortPromise = null;
+    throw e;
+  }));
 }
 
 async function loadModelWeb(assetRequire: any): Promise<string> {
@@ -73,55 +68,52 @@ async function loadModelWeb(assetRequire: any): Promise<string> {
   return asset.uri || asset.localUri || "";
 }
 
-export async function initModels(): Promise<void> {
-  const ortInstance = await getOrt();
+export function initModels(): Promise<void> {
+  return (initPromise ??= (async () => {
+    const ortInstance = await getOrt();
+    const create = async (assetRequire: any) =>
+      ortInstance.InferenceSession.create(await loadModelWeb(assetRequire), {
+        executionProviders: ["wasm"],
+      });
 
-  if (!yoloSession) {
-    const yoloUri = await loadModelWeb(
-      require("../../../assets/models/yolo.onnx"),
-    );
-    yoloSession = await ortInstance.InferenceSession.create(yoloUri, {
-      executionProviders: ["wasm"],
-    });
-  }
-  if (!dinov2Session) {
-    const dinoUri = await loadModelWeb(
-      require("../../../assets/models/dinov2_int8.onnx"),
-    );
-    dinov2Session = await ortInstance.InferenceSession.create(dinoUri, {
-      executionProviders: ["wasm"],
-    });
-  }
+    [yoloSession, dinov2Session] = await Promise.all([
+      yoloSession ?? create(require("../../../assets/models/yolo.onnx")),
+      dinov2Session ?? create(require("../../../assets/models/dinov2_int8.onnx")),
+    ]);
+  })().catch((e) => {
+    initPromise = null;
+    throw e;
+  }));
 }
 
-function getImagePixelsWeb(
+async function getImagePixelsWeb(
   uri: string,
 ): Promise<{ data: Uint8ClampedArray; width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Impossible to init 2D Canvas context"));
-      } else {
-        ctx.drawImage(img, 0, 0);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        resolve({
-          data: imgData.data,
-          width: canvas.width,
-          height: canvas.height,
-        });
-      }
-    };
-    img.onerror = () => {
-      reject(new Error("Error while loading image on the web"));
-    };
-    img.src = uri;
-  });
+  const blob = await (await fetch(uri)).blob();
+  const bitmap = await createImageBitmap(blob);
+  const scale = Math.min(
+    1,
+    MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height),
+  );
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas: any =
+    typeof OffscreenCanvas !== "undefined"
+      ? new OffscreenCanvas(width, height)
+      : Object.assign(document.createElement("canvas"), { width, height });
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) {
+    bitmap.close();
+    throw new Error("Impossible to init 2D Canvas context");
+  }
+
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const imgData = ctx.getImageData(0, 0, width, height);
+  return { data: imgData.data, width, height };
 }
 
 export async function classifyManga(
@@ -138,12 +130,11 @@ export async function classifyManga(
     return cached.data;
   }
 
-  const ortInstance = await getOrt();
-  await initModels();
-
-  const [img, activeIndex] = await Promise.all([
+  const [ortInstance, img, activeIndex] = await Promise.all([
+    getOrt(),
     getImagePixelsWeb(imageUri),
     getActiveIndex(),
+    initModels(),
   ]);
 
   const yoloTensorData = resizeAndNormalize(
@@ -208,10 +199,8 @@ export async function classifyManga(
       confidence: Math.round(bestBoxConf * 1000) / 1000,
       box: bestBox ?? null,
     };
-
-    await setCache(cacheKey, result);
   }
 
+  await setCache(cacheKey, result);
   return result;
 }
-
