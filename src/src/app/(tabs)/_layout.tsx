@@ -11,9 +11,9 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 const tabIcon =
   (active: IconName, inactive: IconName) =>
-  ({ color, focused }: { color: ColorValue; focused: boolean }) => (
-    <Ionicons name={focused ? active : inactive} color={color} size={24} />
-  );
+    ({ color, focused }: { color: ColorValue; focused: boolean }) => (
+      <Ionicons name={focused ? active : inactive} color={color} size={24} />
+    );
 
 const TABS = [
   { name: "index", title: "Home", icon: tabIcon("home-sharp", "home-outline") },
@@ -51,6 +51,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: colors.main,
         tabBarInactiveTintColor: colors.placeHolder,
@@ -86,13 +87,9 @@ export default function TabLayout() {
         />
       ))}
 
-      {/* Hidden tabs */}
+
       <Tabs.Screen name="details" options={{ href: null, title: "Details" }} />
       <Tabs.Screen name="altDetail" options={{ href: null, title: "Details" }} />
-      <Tabs.Screen
-        name="camera"
-        options={{ href: null, title: "Camera", headerShown: false }}
-      />
     </Tabs>
   );
 }

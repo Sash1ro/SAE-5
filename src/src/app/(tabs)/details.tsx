@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { colors } from "@/theme/colors";
 import { Text, View, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -18,7 +18,7 @@ import { useDetectionStore } from "@/stores/useDetectionStore";
 type CoverSource = "official" | "detected";
 
 export default function DetailsPage() {
-  const { title, volume, mangaDetails } = useMangaFetching();
+  const { title, volume, mangaDetails, found} = useMangaFetching();
   const { currentDetection } = useDetectionStore();
   const [coverSource, setCoverSource] = useState<CoverSource>("official");
 
@@ -44,6 +44,7 @@ export default function DetailsPage() {
       <BackButton />
 
       {(!title || !volume) && <EmptyState text="No Manga detected yet." />}
+      {!found && <EmptyState text="No Manga found." />}
 
       {mangaDetails && (
         <Card>

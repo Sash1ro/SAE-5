@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { getCompleteVolumeData } from "@/services/mangaFetcher";
 import { Manga } from "@/types";
 import { useMessageStore } from "@/stores/useMessageStore";
@@ -13,34 +13,40 @@ export function useMangaFetching() {
   }>();
   const run = useAsyncAction();
   const showError = useMessageStore((s) => s.showError);
+  const [found, setFound] = useState(true);
   const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
+  const [redirectFailed, setRedirectFailed] = useState(false);
 
-  if (isEaster(title!)) {
-    const friend = getEasterFriend();
+  const isEasterTitle = !!title && isEaster(title);
 
-    router.push({
-      pathname: "/(tabs)/altDetail",
-      params: {
-        friend: friend ? JSON.stringify(friend) : undefined,
-      },
-    });
+  useFocusEffect(
+    useCallback(() => {
+      if (!isEasterTitle) return;
 
-    return {
-      title: title ?? null,
-      volume: volume ?? null,
-      mangaDetails: mangaDetails ?? null,
-    };
+      const friend = getEasterFriend();
+      if (!friend) {
+        setRedirectFailed(true);
+        return;
+      }
 
-  }
+      setRedirectFailed(false);
+      router.setParams({ title: undefined, volume: undefined });
 
+      router.push({
+        pathname: "/altDetail",
+        params: { friend: JSON.stringify(friend) },
+      });
+    }, [isEasterTitle])
+  );
 
   useEffect(() => {
     const volumeNumber = Number.parseInt(volume ?? "", 10);
     setMangaDetails(null);
-    if (!title || Number.isNaN(volumeNumber)) return;
+    setFound(true);
+    if (!title || Number.isNaN(volumeNumber) || isEasterTitle) return;
     let cancelled = false;
 
-    const fetch = async () => {
+    const load = async () => {
       const data = await run(() => getCompleteVolumeData(title, volumeNumber), {
         loadingText: "Loading details",
         errorMessage: "Failed to fetch manga details.",
@@ -49,21 +55,24 @@ export function useMangaFetching() {
       if (cancelled || data === undefined) return;
       if (data === null) {
         showError("No details found for this manga.", "Not found");
+        setFound(false);
         return;
       }
       setMangaDetails(data);
     };
 
-    fetch();
+    load();
 
     return () => {
       cancelled = true;
     };
-  }, [title, volume, run, showError]);
+  }, [title, volume, run, showError, isEasterTitle]);
 
   return {
     title,
     volume,
     mangaDetails,
+    found,
+    easter: isEasterTitle && !redirectFailed,
   };
 }

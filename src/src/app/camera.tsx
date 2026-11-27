@@ -25,7 +25,7 @@ export default function CameraScreen() {
   const handleCapture = (asset: ImagePickerAsset) => {
     done.current = true;
     resolveCapture(asset);
-    router.back();
+    router.canGoBack() ? router.back() : router.push("/");
   };
 
   return (
@@ -35,7 +35,7 @@ export default function CameraScreen() {
         icon="close"
         size={22}
         color={colors.onMain}
-        fun={() => router.back()}
+        fun={() => router.canGoBack() ? router.back() : router.push("/")}
         style={[styles.close, { top: insets.top + spacing.md }]}
       />
     </View>
