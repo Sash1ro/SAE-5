@@ -20,7 +20,8 @@
       "package": "com.iut.manganitor"
     },
     "web": {
-      "output": "static",
+      "bundler": "metro",
+      "output": "single",
       "favicon": "./assets/app/icon.png"
     },
     "plugins": [
@@ -38,7 +39,8 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/Manganitor"
     },
     "extra": {
       "router": {},
