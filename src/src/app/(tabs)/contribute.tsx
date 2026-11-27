@@ -28,7 +28,7 @@ export default function Contribute() {
         {!hasImage && (
           <Button label="Select Image" fun={pickFromLibrary} icon="images" />
         )}
-        {!hasImage && IS_MOBILE && (
+        {!hasImage && (
           <Button label="Take Photo" alt fun={takePicture} icon="aperture" />
         )}
         {hasImage && (

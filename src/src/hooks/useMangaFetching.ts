@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { getCompleteVolumeData } from "@/services/mangaFetcher";
 import { Manga } from "@/types";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
+import { getEasterFriend, isEaster } from "@/utils/easter";
 
 export function useMangaFetching() {
   const { title, volume } = useLocalSearchParams<{
@@ -13,6 +14,25 @@ export function useMangaFetching() {
   const run = useAsyncAction();
   const showError = useMessageStore((s) => s.showError);
   const [mangaDetails, setMangaDetails] = useState<Manga | null>(null);
+
+  if (isEaster(title!)) {
+    const friend = getEasterFriend();
+
+    router.push({
+      pathname: "/(tabs)/altDetail",
+      params: {
+        friend: friend ? JSON.stringify(friend) : undefined,
+      },
+    });
+
+    return {
+      title: title ?? null,
+      volume: volume ?? null,
+      mangaDetails: mangaDetails ?? null,
+    };
+
+  }
+
 
   useEffect(() => {
     const volumeNumber = Number.parseInt(volume ?? "", 10);

@@ -88,9 +88,10 @@ export default function TabLayout() {
 
       {/* Hidden tabs */}
       <Tabs.Screen name="details" options={{ href: null, title: "Details" }} />
+      <Tabs.Screen name="altDetail" options={{ href: null, title: "Details" }} />
       <Tabs.Screen
         name="camera"
-        options={{ href: null, title: "Details", headerShown: false }}
+        options={{ href: null, title: "Camera", headerShown: false }}
       />
     </Tabs>
   );

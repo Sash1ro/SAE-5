@@ -29,7 +29,7 @@ export default function Index() {
         {!hasImage && (
           <Button label="Select Image" fun={pickFromLibrary} icon="images" />
         )}
-        {!hasImage && IS_MOBILE && (
+        {!hasImage && (
           <Button label="Take Photo" alt fun={takePicture} icon="aperture" />
         )}
       </ButtonGroup>
