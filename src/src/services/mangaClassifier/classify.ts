@@ -3,9 +3,11 @@ import { Platform } from "react-native";
 import type * as OrtType from "onnxruntime-react-native";
 import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system/legacy";
+import * as ImageManipulator from "expo-image-manipulator";
 import jpeg from "jpeg-js";
 import { DetectionResult } from "@/types";
 import { getActiveIndex } from "@/services/indexSync/indexManager";
+import { getLocalVersion } from "@/services/indexSync/indexStorage";
 import { getCache, setCache } from "../cacheService";
 
 import {
@@ -21,9 +23,12 @@ import {
 import { ImagePickerAsset } from "expo-image-picker";
 
 
+const MAX_IMAGE_DIMENSION = 640;
+
 let ort: typeof OrtType | null = null;
 let yoloSession: OrtType.InferenceSession | null = null;
 let dinov2Session: OrtType.InferenceSession | null = null;
+let initPromise: Promise<void> | null = null;
 
 async function loadModel(assetRequire: any): Promise<string> {
   const asset = Asset.fromModule(assetRequire);
@@ -38,22 +43,52 @@ export async function initModels(): Promise<void> {
     );
   }
 
-  if (!ort) {
-    ort = require("onnxruntime-react-native");
+  if (yoloSession && dinov2Session) return;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      if (!ort) {
+        ort = require("onnxruntime-react-native");
+      }
+
+      if (!yoloSession) {
+        const yoloUri = await loadModel(
+          require("../../../assets/models/yolo.onnx"),
+        );
+        yoloSession = await ort!.InferenceSession.create(yoloUri);
+      }
+      if (!dinov2Session) {
+        const dinoUri = await loadModel(
+          require("../../../assets/models/dinov2_int8.onnx"),
+        );
+        dinov2Session = await ort!.InferenceSession.create(dinoUri);
+      }
+    } catch (error) {
+      initPromise = null;
+      throw error;
+    }
+  })();
+
+  return initPromise;
+}
+
+async function normalizeImage(image: ImagePickerAsset): Promise<string> {
+  const actions: ImageManipulator.Action[] = [];
+  if (image.width > MAX_IMAGE_DIMENSION || image.height > MAX_IMAGE_DIMENSION) {
+    actions.push(
+      image.width >= image.height
+        ? { resize: { width: MAX_IMAGE_DIMENSION } }
+        : { resize: { height: MAX_IMAGE_DIMENSION } },
+    );
   }
 
-  if (!yoloSession) {
-    const yoloUri = await loadModel(
-      require("../../../assets/models/yolo.onnx"),
-    );
-    yoloSession = await ort!.InferenceSession.create(yoloUri);
-  }
-  if (!dinov2Session) {
-    const dinoUri = await loadModel(
-      require("../../../assets/models/dinov2_int8.onnx"),
-    );
-    dinov2Session = await ort!.InferenceSession.create(dinoUri);
-  }
+  const manipulated = await ImageManipulator.manipulateAsync(
+    image.uri,
+    actions,
+    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
+  );
+  return manipulated.uri;
 }
 
 async function getImagePixels(
@@ -76,9 +111,8 @@ export async function classifyManga(
   minConfidence: number = DEF_CONFIDENCE,
   minSimilarity: number = DEF_SIMILARITY,
 ): Promise<DetectionResult | null> {
-  const imageUri = image.uri
-  const imageName = image.fileName ?? "file"
-  const cacheKey = generateDetectionCacheKey(imageName, minConfidence, minSimilarity);
+  const indexVersion = await getLocalVersion();
+  const cacheKey = generateDetectionCacheKey(image, minConfidence, minSimilarity, indexVersion);
 
   const cached = await getCache<DetectionResult | null>(cacheKey);
   if (cached.found) {
@@ -87,8 +121,10 @@ export async function classifyManga(
 
   await initModels();
 
+  const normalizedUri = await normalizeImage(image);
+
   const [img, activeIndex] = await Promise.all([
-    getImagePixels(imageUri),
+    getImagePixels(normalizedUri),
     getActiveIndex(),
   ]);
 
@@ -152,6 +188,7 @@ export async function classifyManga(
       tome,
       similarity: Math.round(bestSim * 1000) / 1000,
       confidence: Math.round(bestBoxConf * 1000) / 1000,
+      imageUri: normalizedUri,
       box: bestBox ?? null,
     };
   }

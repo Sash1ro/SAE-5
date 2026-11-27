@@ -5,8 +5,7 @@ import { colors } from "@/theme/colors";
 import Button from "@/components/button";
 import { deleteToken } from "@/services/userTokenService";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-const APP_NAME = "Manganitor";
+import { useHistoryStore } from "@/stores/useHistoryStore";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -34,6 +33,7 @@ export default function TabLayout() {
 
   const logout = async () => {
     await deleteToken();
+    useHistoryStore.getState().reset();
     setIsLoggedIn(false);
   };
 

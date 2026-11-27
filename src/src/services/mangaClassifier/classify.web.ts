@@ -2,6 +2,7 @@ import type * as OrtType from "onnxruntime-web";
 import { Asset } from "expo-asset";
 import { DetectionResult } from "@/types";
 import { getActiveIndex } from "@/services/indexSync/indexManager";
+import { getLocalVersion } from "@/services/indexSync/indexStorage";
 import { getCache, setCache } from "../cacheService";
 
 import {
@@ -128,9 +129,9 @@ export async function classifyManga(
   minConfidence: number = DEF_CONFIDENCE,
   minSimilarity: number = DEF_SIMILARITY,
 ): Promise<DetectionResult | null> {
-  const imageUri = image.uri
-  const imageName = image.fileName ?? "file"
-  const cacheKey = generateDetectionCacheKey(imageName, minConfidence, minSimilarity);
+  const imageUri = image.uri;
+  const indexVersion = await getLocalVersion();
+  const cacheKey = generateDetectionCacheKey(image, minConfidence, minSimilarity, indexVersion);
 
   const cached = await getCache<DetectionResult | null>(cacheKey);
   if (cached.found) {

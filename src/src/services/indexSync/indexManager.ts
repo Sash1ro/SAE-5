@@ -1,6 +1,8 @@
 import staticIndexData from "../../../assets/models/index_mangas.json";
 import { IndexData } from "@/types";
 import { getLocalVersion, updateLocalIndex, getCachedIndex } from "./indexStorage"; 
+import { clearCacheByPrefix } from "@/services/cacheService";
+import { DETECTION_CACHE_PREFIX } from "@/services/mangaClassifier/classifyCore";
 import { SERVER_URL } from "@/utils/utils";
 
 let memoryIndex: IndexData | null = null;
@@ -23,6 +25,7 @@ export async function syncIndexWithServer(): Promise<void> {
       
       if (newIndex) {
         memoryIndex = newIndex;
+        await clearCacheByPrefix(DETECTION_CACHE_PREFIX);
       }
     }
   } catch (e) {

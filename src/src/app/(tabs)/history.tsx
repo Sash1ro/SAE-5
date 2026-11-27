@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { FlatList, ListRenderItem, StyleSheet, View } from "react-native";
+import { FlatList, ListRenderItem, RefreshControl, StyleSheet, View } from "react-native";
 import Button from "@/components/button";
 import Card from "@/components/card";
 import CardHeader from "@/components/cardHeader";
@@ -13,7 +13,7 @@ import { spacing } from "@/theme/tokens";
 
 export default function HistoryPage() {
   const {
-    history, hasHistory, query, setQuery,
+    history, hasHistory, isRefreshing, refreshHistory, query, setQuery,
     handleDelete, handleFetch, handleClearAll,
   } = useHistoryFetching();
 
@@ -48,6 +48,13 @@ export default function HistoryPage() {
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={refreshHistory}
+              tintColor={colors.main}
+            />
+          }
           ListEmptyComponent={<EmptyState text={`No results for "${query.trim()}"`} />}
         />
       </Card>

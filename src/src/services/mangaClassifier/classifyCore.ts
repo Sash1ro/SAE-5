@@ -3,14 +3,37 @@ import { Box, IndexData } from "@/types";
 
 export type { Box, IndexData };
 
-const CACHE_PREFIX = '@manga_detection_cache_';
+export const DETECTION_CACHE_PREFIX = '@manga_detection_cache_';
 const IMAGENET_MEAN = [0.485, 0.456, 0.406];
 const IMAGENET_STD = [0.229, 0.224, 0.225];
 export const DEF_CONFIDENCE = 0.2
 export const DEF_SIMILARITY = 0.4
 
-export function generateDetectionCacheKey(imageName: string, minConfidence: number, minSimilarity: number): string {
-  return formatToStub(`${CACHE_PREFIX}${imageName}_${minConfidence}_${minSimilarity}`);
+function hashString(input: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function generateDetectionCacheKey(
+  image: {
+    uri: string;
+    fileSize?: number;
+    width?: number;
+    height?: number;
+  },
+  minConfidence: number,
+  minSimilarity: number,
+  indexVersion: number = 0,
+): string {
+  const uriHash = hashString(image.uri);
+  const meta = `${image.width ?? 0}x${image.height ?? 0}_${image.fileSize ?? 0}`;
+  return formatToStub(
+    `${DETECTION_CACHE_PREFIX}v${indexVersion}_${uriHash}_${meta}_${minConfidence}_${minSimilarity}`,
+  );
 }
 
 export function resizeAndNormalize(

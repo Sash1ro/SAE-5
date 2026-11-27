@@ -20,6 +20,7 @@
     "expo-font": "~57.0.4",
     "expo-glass-effect": "~57.0.5",
     "expo-image": "~57.0.5",
+    "expo-image-manipulator": "~57.0.23",
     "expo-image-picker": "~57.0.21",
     "expo-linking": "~57.0.14",
     "expo-router": "~57.0.31",
@@ -56,6 +57,5 @@
     "lint": "expo lint",
     "postinstall": "node -e 'const fs=require(\"fs\"); const p=\"node_modules/onnxruntime-react-native/android/build.gradle\"; if(fs.existsSync(p)){ let s=fs.readFileSync(p,\"utf8\").replace(/\\bVersionNumber\\b/g,\"org.gradle.util.VersionNumber\"); s=s.replace(/org\\.gradle\\.util\\.org\\.gradle\\.util\\.VersionNumber/g,\"org.gradle.util.VersionNumber\"); fs.writeFileSync(p,s); }'"
   },
-  
   "private": true
 }

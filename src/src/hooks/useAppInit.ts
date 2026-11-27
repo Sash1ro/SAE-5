@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import {
     Href,
     useGlobalSearchParams,
@@ -8,6 +9,8 @@ import {
 } from "expo-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { syncIndexWithServer } from "@/services/indexSync/indexManager";
+import { pruneExpiredCache } from "@/services/cacheService";
+import { initModels } from "@/services/mangaClassifier/classify";
 import { me } from "@/services/userService";
 import { useAsyncAction } from "./useAsyncAction";
 
@@ -29,7 +32,11 @@ function useSessionCheck() {
     const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
+        pruneExpiredCache();
         run(() => syncIndexWithServer(), { useLoading: false });
+        if (Platform.OS !== "web") {
+            initModels().catch(() => {});
+        }
 
         const check = async () => {
             const ok = await run(

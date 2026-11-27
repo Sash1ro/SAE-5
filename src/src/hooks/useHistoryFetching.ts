@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   clearHistory,
@@ -9,6 +9,7 @@ import { History } from "@/types";
 import { useMessageStore } from "@/stores/useMessageStore";
 import { useAsyncAction } from "./useAsyncAction";
 import { useDetectionStore } from "@/stores/useDetectionStore";
+import { useHistoryStore } from "@/stores/useHistoryStore";
 
 function matchesQuery(h: History, query: string): boolean {
   return (
@@ -21,28 +22,50 @@ export function useHistoryFetching() {
   const router = useRouter();
   const run = useAsyncAction();
   const showConfirm = useMessageStore((s) => s.showConfirmation);
-  const setDetect = useDetectionStore((s) => s.setCurrentDetection)
+  const setDetect = useDetectionStore((s) => s.setCurrentDetection);
 
-  const [history, setHistory] = useState<History[] | null>(null);
+  const history = useHistoryStore((s) => s.history);
+  const hasLoaded = useHistoryStore((s) => s.hasLoaded);
+  const isRefreshing = useHistoryStore((s) => s.isRefreshing);
+  const setHistory = useHistoryStore((s) => s.setHistory);
+  const removeHistoryItem = useHistoryStore((s) => s.removeHistoryItem);
+  const clearHistoryItems = useHistoryStore((s) => s.clearHistoryItems);
+  const setHasLoaded = useHistoryStore((s) => s.setHasLoaded);
+  const setIsRefreshing = useHistoryStore((s) => s.setIsRefreshing);
+
   const [query, setQuery] = useState("");
-  const hasLoaded = useRef(false);
 
-  const fetchHistory = useCallback(async () => {
-    const resp = await run(() => getAllHisotry(), {
-      useLoading: !hasLoaded.current,
-      loadingText: "Loading history...",
-      errorMessage: "Failed to load history.",
-    });
+  const fetchHistory = useCallback(
+    async (isRefresh: boolean = false) => {
+      if (isRefresh) setIsRefreshing(true);
+      try {
+        const resp = await run(() => getAllHisotry(), {
+          useLoading: !isRefresh && !hasLoaded,
+          loadingText: "Loading history...",
+          errorMessage: "Failed to load history.",
+        });
 
-    if (!resp) return;
-    hasLoaded.current = true;
-    if (resp.data) setHistory(resp.data);
-  }, [run]);
+        if (!resp) return;
+        setHasLoaded(true);
+        if (resp.data) setHistory(resp.data);
+      } finally {
+        if (isRefresh) setIsRefreshing(false);
+      }
+    },
+    [run, hasLoaded, setHasLoaded, setHistory, setIsRefreshing],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      fetchHistory();
-    }, [fetchHistory]),
+      if (!hasLoaded) {
+        fetchHistory(false);
+      }
+    }, [hasLoaded, fetchHistory]),
+  );
+
+  const refreshHistory = useCallback(
+    () => fetchHistory(true),
+    [fetchHistory],
   );
 
   const filteredHistory = useMemo(() => {
@@ -66,7 +89,7 @@ export function useHistoryFetching() {
       pathname: "/details",
       params: { title: h.universe_name, volume: String(h.universe_volume) },
     });
-  }
+  };
 
   const deleteEntry = async (id: string) => {
     const ok = await run(
@@ -80,7 +103,7 @@ export function useHistoryFetching() {
       },
     );
 
-    if (ok) setHistory((prev) => prev?.filter((item) => item.id !== id) ?? null);
+    if (ok) removeHistoryItem(id);
   };
 
   const confirmDelete = (h: History) =>
@@ -101,7 +124,7 @@ export function useHistoryFetching() {
     );
 
     if (!ok) return;
-    setHistory([]);
+    clearHistoryItems();
     setQuery("");
   };
 
@@ -115,6 +138,8 @@ export function useHistoryFetching() {
   return {
     history: filteredHistory,
     hasHistory: (history?.length ?? 0) > 0,
+    isRefreshing,
+    refreshHistory,
     query,
     setQuery,
     handleFetch: openDetails,
